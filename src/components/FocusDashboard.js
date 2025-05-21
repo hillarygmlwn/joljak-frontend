@@ -3,7 +3,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import './FocusDashboard.css';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext }    from '../context/AuthContext';  // ← 수정
+import { AuthContext } from '../context/AuthContext';  // ← 수정
 
 const mockFocusData = {
   '2025-05-02': 70,
@@ -17,7 +17,7 @@ function FocusDashboard() {
   const { user } = useContext(AuthContext);           // ← 여기가 변경된 부분
   const [value, setValue] = useState(new Date());
   const navigate = useNavigate();
-  
+
 
   const formatDate = (date) => {
     const year = date.getFullYear();
@@ -56,7 +56,19 @@ function FocusDashboard() {
         </div>
         <button
           className="study-btn"
-          onClick={() => navigate('/study')}
+          onClick={async () => {
+            try {
+              const res = await fetch("https://start-focus-server.onrender.com/start-focus", {
+                method: "POST"
+              });
+              const data = await res.json();
+              alert(data.message || "서버 응답 없음");
+              navigate('/study'); // ✅ 요청 후 페이지 이동
+            } catch (err) {
+              console.error("서버 요청 실패:", err);
+              alert("서버 요청 중 오류 발생!");
+            }
+          }}
         >
           공부 시작
         </button>
