@@ -1,17 +1,10 @@
 {
-  "proxy": "http://13.236.148.165:8000",
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^13.5.0",
     "axios": "^1.9.0",
     "chart.js": "^4.4.9",
-    "cors": "^2.8.5",
-    "express": "^5.1.0",
     "react": "^19.1.0",
     "react-calendar": "^5.1.0",
     "react-chartjs-2": "^5.3.0",
@@ -26,7 +19,6 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -44,10 +36,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "description": "This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).",
-  "main": "index.js",
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  }
 }

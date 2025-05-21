@@ -1,0 +1,23 @@
+/* src/pages/RegisterPage.css */
+.register-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.register-container input {
+  margin: 8px 0;
+  padding: 8px;
+  width: 200px;
+}
+
+.register-container .btn {
+  padding: 8px 16px;
+}
+
+.register-container .link {
+  color: blue;
+  cursor: pointer;
+  text-decoration: underline;
+}

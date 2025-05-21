@@ -1,4 +1,3 @@
-// pages/StudySessionPage.js
 import React, { useEffect, useState } from 'react';
 import './StudySessionPage.css';
 import { useNavigate } from 'react-router-dom';
@@ -8,12 +7,65 @@ import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Lege
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 function StudySessionPage() {
+  const [isRunning, setIsRunning] = useState(false);
+  const [isResting, setIsResting] = useState(false);
   const [startTime] = useState(Date.now());
   const [studyTime, setStudyTime] = useState(0);
   const [restTime, setRestTime] = useState(0);
-  const [isResting, setIsResting] = useState(false);
   const [focusData, setFocusData] = useState([]);
   const navigate = useNavigate();
+
+  // ✅ Flask 서버에 Python 실행 요청
+  const handleStartPython = async () => {
+    if (isRunning) {
+      console.log('⚠️ 이미 실행 중입니다.');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:5000/start', { method: 'POST' });
+      if (res.ok) {
+        console.log('✅ Python 실행 시작');
+        setIsRunning(true);
+      } else {
+        console.warn('⚠️ Python 이미 실행 중이거나 오류');
+      }
+    } catch (err) {
+      console.error('❌ Python 실행 실패:', err);
+    }
+  };
+
+  // ✅ Flask 서버에 Python 종료 요청
+  const handleStopPython = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/stop', { method: 'POST' });
+      if (res.ok) {
+        console.log('✅ Python 종료됨');
+        setIsRunning(false);
+      } else {
+        console.warn('⚠️ 종료 실패 또는 이미 종료됨');
+      }
+    } catch (err) {
+      console.error('❌ Python 종료 요청 실패:', err);
+    }
+  };
+
+  const handleEnd = async () => {
+    try {
+      await fetch('https://learningas.shop/stop-capture/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Token ${localStorage.getItem('token')}`,
+        },
+      });
+      alert('측정 종료됨');
+    } catch (err) {
+      console.error('측정 종료 실패', err);
+      alert('서버 요청 실패');
+    }
+    navigate('/dashboard');
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -22,20 +74,17 @@ function StudySessionPage() {
       } else {
         setStudyTime((prev) => {
           const newTime = prev + 1;
-
-          // 10분 단위 집중도 기록
           if (newTime % 600 === 0) {
-            const focusScore = Math.floor(Math.random() * 50) + 50; // 50~100 랜덤
+            const focusScore = Math.floor(Math.random() * 50) + 50;
             setFocusData((prevData) => [
               ...prevData,
               {
                 time: newTime,
-                score: isResting ? 0 : Math.floor(Math.random() * 50) + 50,
+                score: isResting ? 0 : focusScore,
                 isRest: isResting,
               },
             ]);
           }
-
           return newTime;
         });
       }
@@ -46,10 +95,6 @@ function StudySessionPage() {
 
   const toggleRest = () => {
     setIsResting((prev) => !prev);
-  };
-
-  const handleEnd = () => {
-    navigate('/dashboard');
   };
 
   const formatTime = (totalSeconds) => {
@@ -69,7 +114,7 @@ function StudySessionPage() {
       },
       {
         label: '휴식 시간',
-        data: focusData.map((d) => d.isRest ? 10 : null), // 휴식은 10점만 표시해서 시각화
+        data: focusData.map((d) => d.isRest ? 10 : null),
         backgroundColor: 'rgba(160, 160, 160, 0.5)',
       },
     ],
@@ -81,14 +126,20 @@ function StudySessionPage() {
       <p>공부 시작 시간: {new Date(startTime).toLocaleTimeString()}</p>
       <p>누적 공부 시간: {formatTime(studyTime)}</p>
       <p>누적 휴식 시간: {formatTime(restTime)}</p>
+
       <button className="rest-btn" onClick={toggleRest}>
         {isResting ? '휴식 끝' : '휴식 시작'}
       </button>
-      <button className="end-btn" onClick={handleEnd}>
-        공부 끝
+
+      <button
+        style={{ backgroundColor: 'red', color: 'white' }}
+        onClick={handleStartPython}
+      >
+        공부 시작
       </button>
 
-      {/* 그래프 */}
+      <button onClick={handleStopPython}>공부 끝</button>
+
       <div style={{ marginTop: '40px' }}>
         <h2>📊 집중도 변화</h2>
         <Bar data={chartData} />

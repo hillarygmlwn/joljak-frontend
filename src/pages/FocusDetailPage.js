@@ -31,7 +31,7 @@ const FocusDetailPage = () => {
 
   useEffect(() => {
   axios
-      .get(`http://13.236.148.165:8000/focus/summary/?date=${date}`)
+      .get(`https://learningas.shop/focus/summary/?date=${date}`)
       .then((res) => {
         setSummary(res.data);
       })
@@ -41,7 +41,7 @@ const FocusDetailPage = () => {
 
       // 신규 timeline 요청
   axios
-    .get(`http://13.236.148.165:8000/focus/timeline/?date=${date}`)
+    .get(`https://learningas.shop/focus/timeline/?date=${date}`)
     .then((res) => {
       const raw = res.data.timeline;
       setTimelineData({
@@ -62,7 +62,7 @@ const FocusDetailPage = () => {
     })
     .catch((err) => console.error("timeline 로딩 실패", err));
   axios
-  .get(`http://13.236.148.165:8000/focus/blink_summary/?date=${date}`)
+  .get(`https://learningas.shop/focus/blink_summary/?date=${date}`)
   .then((res) => {
     const timeline = res.data.timeline;
 

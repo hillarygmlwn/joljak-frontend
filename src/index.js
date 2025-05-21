@@ -7,7 +7,7 @@ import { AuthProvider } from './context/AuthContext';
 import axios from 'axios';
 
 // Axios 기본 설정
-axios.defaults.baseURL = 'http://13.236.148.165:8000/';
+axios.defaults.baseURL = 'https://learningas.shop/';
 axios.defaults.headers.common['Authorization'] = `Token ${localStorage.getItem('token')}`;
 
 // root 노드에 렌더링

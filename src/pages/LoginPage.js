@@ -1,38 +1,40 @@
-// pages/LoginPage.js
+// src/pages/LoginPage.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
 
-const SERVER = 'http://13.236.148.165:8000';
+const SERVER = 'https://learningas.shop';
 
 function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [form, setForm] = useState({ username: '', password: '', email: '' });
+  const [form, setForm] = useState({ username: '', password: '' });
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async () => {
-    const url = isLogin ? `${SERVER}/users/login/` : `${SERVER}/users/register/`;
-
     try {
-      const res = await fetch(url, {
+      // 토큰 발급 엔드포인트
+      const res = await fetch(`${SERVER}/api-token-auth/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (res.ok) {
-        const { token, user } = data;
-        localStorage.setItem('token', token);
-        localStorage.setItem('username', user.username);
+
+      if (res.ok && data.token) {
+        // 토큰과 사용자명 로컬에 저장
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('username', form.username);
+
+        // axios 기본 헤더 세팅 (index.js 쪽에서 읽어감)
         navigate('/dashboard');
       } else {
-        alert(data.error);
+        alert(data.non_field_errors || data.detail || '로그인 실패');
       }
     } catch (err) {
+      console.error(err);
       alert('서버 요청 중 에러 발생');
     }
   };
@@ -40,19 +42,32 @@ function LoginPage() {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h2>{isLogin ? '로그인' : '회원가입'}</h2>
-        <input type="text" name="username" placeholder="아이디" onChange={handleChange} />
-        {!isLogin && <input type="email" name="email" placeholder="이메일" onChange={handleChange} />}
-        <input type="password" name="password" placeholder="비밀번호" onChange={handleChange} />
+        <h2>로그인</h2>
+        <input
+          type="text"
+          name="username"
+          placeholder="아이디"
+          value={form.username}
+          onChange={handleChange}
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="비밀번호"
+          value={form.password}
+          onChange={handleChange}
+        />
         <button className="btn" onClick={handleSubmit}>
-          {isLogin ? '로그인' : '회원가입'}
+          로그인
         </button>
-        <div className="toggle">
-          {isLogin ? '계정이 없으신가요? ' : '이미 계정이 있으신가요? '}
-          <span className="link" onClick={() => setIsLogin(!isLogin)}>
-            {isLogin ? '회원가입' : '로그인'}
-          </span>
-        </div>
+
+        {/* 토글 대신 간단한 내비게이션 */}
+        <button
+          className="link-button"
+          onClick={() => navigate('/register')}
+        >
+          계정이 없으신가요? 회원가입
+        </button>
       </div>
     </div>
   );
