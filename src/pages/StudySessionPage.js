@@ -5,7 +5,6 @@ import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
 import BlinkZoneoutDetector from '../components/BlinkZoneoutDetector';
 
-
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 function StudySessionPage() {
@@ -17,44 +16,17 @@ function StudySessionPage() {
   const [focusData, setFocusData] = useState([]);
   const navigate = useNavigate();
 
-  const handleStartPython = async () => {
-    if (isRunning) {
-      console.log('⚠️ 이미 실행 중입니다.');
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      const video = document.getElementById('webcam');
-      if (video) {
-        video.srcObject = stream;
-        video.play();
-      }
-      console.log('✅ 웹캠 실행됨');
-      setIsRunning(true);
-    } catch (err) {
-      console.error('❌ 웹캠 접근 실패:', err);
-      alert('웹캠 권한이 필요합니다.');
-    }
-  };
-
-
-  // ✅ Flask 서버에 Python 종료 요청
   const handleStopPython = async () => {
     try {
-      const res = await fetch('http://localhost:5000/stop', { method: 'POST' });
-      if (res.ok) {
-        console.log('✅ Python 종료됨');
-        setIsRunning(false);
-      } else {
-        console.warn('⚠️ 종료 실패 또는 이미 종료됨');
-      }
+      const res = await fetch('https://start-focus-server.onrender.com/stop', {
+        method: 'POST',
+      });
+      console.log('✅ Python 종료 요청 전송됨');
     } catch (err) {
       console.error('❌ Python 종료 요청 실패:', err);
     }
-  };
 
-  const handleEnd = async () => {
+    // 측정 종료 API 요청
     try {
       await fetch('https://learningas.shop/stop-capture/', {
         method: 'POST',
@@ -130,9 +102,9 @@ function StudySessionPage() {
       <p>공부 시작 시간: {new Date(startTime).toLocaleTimeString()}</p>
       <p>누적 공부 시간: {formatTime(studyTime)}</p>
       <p>누적 휴식 시간: {formatTime(restTime)}</p>
-      {/* 👇 여기에 추가 */}
-      <BlinkZoneoutDetector />
 
+      {/* 👇 BlinkZoneoutDetector 한 번만 삽입 */}
+      <BlinkZoneoutDetector />
 
       <button className="rest-btn" onClick={toggleRest}>
         {isResting ? '휴식 끝' : '휴식 시작'}
@@ -140,7 +112,8 @@ function StudySessionPage() {
 
       <button
         style={{ backgroundColor: 'red', color: 'white' }}
-        onClick={handleStartPython}
+        onClick={() => setIsRunning(true)}
+        disabled={isRunning}
       >
         공부 시작
       </button>
@@ -151,18 +124,6 @@ function StudySessionPage() {
         <h2>📊 집중도 변화</h2>
         <Bar data={chartData} />
       </div>
-      <video
-        id="webcam"
-        autoPlay
-        playsInline
-        muted
-        width="640"
-        height="480"
-        style={{ border: '1px solid gray', marginTop: '20px' }}
-      />
-
-      <BlinkZoneoutDetector />
-
     </div>
   );
 }
