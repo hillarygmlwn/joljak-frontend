@@ -58,7 +58,7 @@ function StudySessionPage() {
   const handleStopPython = async () => {
     try {
       await fetch('https://start-focus-server.onrender.com/stop', { method: 'POST' });
-      await fetch('https://learningas.shop/stop-capture/', {
+      await fetch('https://learningas.shop/focus/study-sessions/end/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,7 +66,7 @@ function StudySessionPage() {
         },
       });
       alert('측정 종료됨');
-      navigate('/dashboard');
+      navigate('/dashboard'); // ✅ 공부 끝 후 대시보드로 이동
     } catch (err) {
       console.error('❌ Python 종료 요청 실패:', err);
       alert('서버 요청 실패');
