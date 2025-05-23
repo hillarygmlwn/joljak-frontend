@@ -3,7 +3,7 @@ import './StudySessionPage.css';
 import { useNavigate } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
-import BlinkZoneoutDetector from './BlinkZoneoutDetector'; // 경로 맞게 조정
+import BlinkZoneoutDetector from '../components/BlinkZoneoutDetector';
 
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
