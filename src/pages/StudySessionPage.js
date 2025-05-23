@@ -3,6 +3,8 @@ import './StudySessionPage.css';
 import { useNavigate } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
+import BlinkZoneoutDetector from '../components/BlinkZoneoutDetector';
+
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -15,7 +17,6 @@ function StudySessionPage() {
   const [focusData, setFocusData] = useState([]);
   const navigate = useNavigate();
 
-  // ✅ Flask 서버에 Python 실행 요청
   const handleStartPython = async () => {
     if (isRunning) {
       console.log('⚠️ 이미 실행 중입니다.');
@@ -23,17 +24,20 @@ function StudySessionPage() {
     }
 
     try {
-      const res = await fetch('http://localhost:5000/start', { method: 'POST' });
-      if (res.ok) {
-        console.log('✅ Python 실행 시작');
-        setIsRunning(true);
-      } else {
-        console.warn('⚠️ Python 이미 실행 중이거나 오류');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const video = document.getElementById('webcam');
+      if (video) {
+        video.srcObject = stream;
+        video.play();
       }
+      console.log('✅ 웹캠 실행됨');
+      setIsRunning(true);
     } catch (err) {
-      console.error('❌ Python 실행 실패:', err);
+      console.error('❌ 웹캠 접근 실패:', err);
+      alert('웹캠 권한이 필요합니다.');
     }
   };
+
 
   // ✅ Flask 서버에 Python 종료 요청
   const handleStopPython = async () => {
@@ -144,6 +148,18 @@ function StudySessionPage() {
         <h2>📊 집중도 변화</h2>
         <Bar data={chartData} />
       </div>
+      <video
+        id="webcam"
+        autoPlay
+        playsInline
+        muted
+        width="640"
+        height="480"
+        style={{ border: '1px solid gray', marginTop: '20px' }}
+      />
+
+      <BlinkZoneoutDetector />
+
     </div>
   );
 }

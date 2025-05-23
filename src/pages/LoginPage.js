@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
+import axios from 'axios';  // 상단에 추가되어 있어야 함
 
 const SERVER = 'https://learningas.shop';
 
@@ -29,6 +30,9 @@ function LoginPage() {
         localStorage.setItem('username', form.username);
 
         // axios 기본 헤더 세팅 (index.js 쪽에서 읽어감)
+        // ✅ axios 기본 헤더 설정
+
+        axios.defaults.headers.common['Authorization'] = `Token ${data.token}`;
         navigate('/dashboard');
       } else {
         alert(data.non_field_errors || data.detail || '로그인 실패');
