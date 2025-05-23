@@ -1,6 +1,4 @@
-// 📦 설치 필요: @mediapipe/face_mesh, @mediapipe/camera_utils (CDN 방식으로 사용 중)
 import React, { useEffect, useRef, useState } from 'react';
-
 
 function BlinkZoneoutDetector() {
     const videoRef = useRef(null);
@@ -8,6 +6,12 @@ function BlinkZoneoutDetector() {
     const [eyeClosedTime, setEyeClosedTime] = useState(0);
     const [zoningOutTime, setZoningOutTime] = useState(0);
     const [present, setPresent] = useState(false);
+
+    // ✅ 실시간 전송용 ref
+    const blinkCountRef = useRef(0);
+    const eyeClosedTimeRef = useRef(0);
+    const zoningOutTimeRef = useRef(0);
+    const presentRef = useRef(false);
 
     let blinkThreshold = 0.2;
     let blinkConsecFrames = 3;
@@ -33,6 +37,7 @@ function BlinkZoneoutDetector() {
     const onResults = (results) => {
         const detected = results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0;
         setPresent(detected);
+        presentRef.current = detected;
 
         if (!detected) return;
 
@@ -49,10 +54,16 @@ function BlinkZoneoutDetector() {
 
         if (ear < blinkThreshold) {
             eyeCloseCounter++;
-            setEyeClosedTime(prev => prev + 1);
+            setEyeClosedTime(prev => {
+                eyeClosedTimeRef.current = prev + 1;
+                return prev + 1;
+            });
         } else {
             if (eyeCloseCounter >= blinkConsecFrames) {
-                setBlinkCount(prev => prev + 1);
+                setBlinkCount(prev => {
+                    blinkCountRef.current = prev + 1;
+                    return prev + 1;
+                });
             }
             eyeCloseCounter = 0;
         }
@@ -82,7 +93,10 @@ function BlinkZoneoutDetector() {
                 zoneoutStarted = true;
                 console.log('😵 멍 때리는 중...');
             }
-            setZoningOutTime(prev => prev + 1);
+            setZoningOutTime(prev => {
+                zoningOutTimeRef.current = prev + 1;
+                return prev + 1;
+            });
         } else {
             zoneoutStarted = false;
         }
@@ -114,14 +128,15 @@ function BlinkZoneoutDetector() {
         camera.start();
     }, []);
 
+    // ✅ 전송: 10초마다 한 번씩만
     useEffect(() => {
         const interval = setInterval(() => {
             const payload = {
-                blink_count: blinkCount,
-                eyes_closed_time: parseFloat((eyeClosedTime / 30).toFixed(2)),
-                zoning_out_time: parseFloat((zoningOutTime / 30).toFixed(2)),
+                blink_count: blinkCountRef.current,
+                eyes_closed_time: parseFloat((eyeClosedTimeRef.current / 30).toFixed(2)),
+                zoning_out_time: parseFloat((zoningOutTimeRef.current / 30).toFixed(2)),
                 timestamp: new Date().toISOString(),
-                present: present,
+                present: presentRef.current,
             };
 
             console.log('📤 전송할 데이터:', payload);
@@ -138,13 +153,14 @@ function BlinkZoneoutDetector() {
                 .then(data => console.log('✅ 전송 완료:', data))
                 .catch(err => console.error('❌ 전송 실패:', err));
 
-            setBlinkCount(0);
-            setEyeClosedTime(0);
-            setZoningOutTime(0);
+            // 초기화
+            blinkCountRef.current = 0;
+            eyeClosedTimeRef.current = 0;
+            zoningOutTimeRef.current = 0;
         }, 10000);
 
         return () => clearInterval(interval);
-    }, [blinkCount, eyeClosedTime, zoningOutTime, present]);
+    }, []);
 
     return (
         <div>
