@@ -74,22 +74,7 @@ function FocusDashboard() {
   };
 
   const handleStartStudy = async () => {
-    try {
-      const res = await fetch("https://start-focus-server.onrender.com/start-focus", {
-        method: "POST"
-      });
-      const data = await res.json();
-      alert(data.message || "서버 응답 없음");
-
-      window.open(
-        "https://joljak-frontend.vercel.app/test-webcam",
-        "focusWindow",
-        "width=800,height=600,left=200,top=100"
-      );
-    } catch (err) {
-      console.error("서버 요청 실패:", err);
-      alert("서버 요청 중 오류 발생!");
-    }
+    navigate('/study');
   };
 
   return (

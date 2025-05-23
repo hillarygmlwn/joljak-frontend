@@ -3,7 +3,7 @@ import './StudySessionPage.css';
 import { useNavigate } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
-import BlinkZoneoutDetector from '../components/BlinkZoneoutDetector';
+import BlinkZoneoutDetector from './BlinkZoneoutDetector'; // 경로 맞게 조정
 
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
@@ -130,6 +130,9 @@ function StudySessionPage() {
       <p>공부 시작 시간: {new Date(startTime).toLocaleTimeString()}</p>
       <p>누적 공부 시간: {formatTime(studyTime)}</p>
       <p>누적 휴식 시간: {formatTime(restTime)}</p>
+      {/* 👇 여기에 추가 */}
+      <BlinkZoneoutDetector />
+
 
       <button className="rest-btn" onClick={toggleRest}>
         {isResting ? '휴식 끝' : '휴식 시작'}

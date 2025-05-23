@@ -1,6 +1,7 @@
 // 📦 설치 필요: @mediapipe/face_mesh, @mediapipe/camera_utils (CDN 방식으로 사용 중)
 import React, { useEffect, useRef, useState } from 'react';
 
+
 function BlinkZoneoutDetector() {
     const videoRef = useRef(null);
     const [blinkCount, setBlinkCount] = useState(0);
