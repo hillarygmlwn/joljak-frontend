@@ -1,7 +1,7 @@
 // ✅ StudyStartPage.js 수정 버전
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import StudyStartPage from './pages/StudyStartPage';
+
 
 
 function StudyStartPage() {
