@@ -12,6 +12,7 @@ import BlinkZoneoutDetector from './components/BlinkZoneoutDetector';
 import StudyPlacePage from './pages/StudyPlacePage';
 import StudyStartPage from './pages/StudyStartPage';
 import StartPage from './pages/StartPage';
+
  // ✅ 경로 확인
 // import TestWebcam from './pages/TestWebcam'; // ❌ 제거 가능
 
@@ -36,7 +37,7 @@ function App() {
         <Route path="/study-place" element={<StudyPlacePage />} />
         <Route path="/start-study" element={<StudyStartPage />} />
         <Route path="/start" element={<StartPage />} />
-        <Route path="/" element={<LoginPage />} />
+        <Route path="/" element={<StartPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/study" element={<StudySessionPage />} />
