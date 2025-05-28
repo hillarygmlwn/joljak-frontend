@@ -38,6 +38,7 @@ function App() {
         <Route path="/start-study" element={<StudyStartPage />} />
         <Route path="/start" element={<StartPage />} />
         <Route path="/" element={<StartPage />} />
+        <Route path="/login" element={<LoginPage />} /> {/* ✅ 이거 꼭 있어야 함 */}
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/study" element={<StudySessionPage />} />
