@@ -45,7 +45,7 @@ function StartPage() {
                     width: 180, height: 209, left: 630, top: 560,
                     position: 'absolute', borderRadius: 58
                 }}
-                src={require('../assets/study_start.png')}
+                src="/assets/study_start.png"
                 alt="공부하는 공룡"
             />
         </div>
