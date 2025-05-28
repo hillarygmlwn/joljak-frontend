@@ -17,6 +17,37 @@ function StudySessionPage() {
   const [place, setPlace] = useState('');
   const navigate = useNavigate();
 
+  const sendEventToBackend = async (eventType) => {
+  const session_id = localStorage.getItem("session_id");
+  if (!session_id) return;
+
+  const payload = {
+    session_id,
+    event_type: eventType,
+    timestamp: new Date().toISOString(),
+  };
+
+  try {
+    const res = await fetch('https://learningas.shop/focus/event/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Token ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      console.warn('이벤트 전송 실패:', await res.text());
+    } else {
+      console.log(`✅ 이벤트 전송 완료: ${eventType}`);
+    }
+  } catch (err) {
+    console.error('❌ 이벤트 전송 중 오류:', err);
+  }
+};
+
+
   const handleStartPython = async () => {
     if (isRunning) {
       console.log('⚠️ 이미 실행 중입니다.');
@@ -49,22 +80,53 @@ function StudySessionPage() {
         alert(data?.error || '서버 오류');
       } else {
         console.log('📦 공부 시작 정보 전송됨:', data);
+        localStorage.setItem("session_id", data.session_id); // ✅ 세션 ID 저장
       }
     } catch (err) {
       console.error('❌ 웹캠 또는 서버 요청 실패:', err);
     }
   };
 
+  const handleStopWebcam = () => {
+    const video = document.getElementById('webcam');
+    if (video?.srcObject) {
+      video.srcObject.getTracks().forEach(track => track.stop());
+      video.srcObject = null;
+      console.log('📷 웹캠 꺼짐');
+      alert('웹캠이 꺼졌습니다.');
+    } else {
+      alert('웹캠이 이미 꺼져있거나 연결되지 않았습니다.');
+    }
+  };
+
   const handleStopPython = async () => {
     try {
+
+      // 캠 끄기
+      const video = document.getElementById('webcam');
+      if (video?.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+        console.log('📷 웹캠 자동 종료됨');
+      }
       await fetch('https://start-focus-server.onrender.com/stop', { method: 'POST' });
-      await fetch('https://learningas.shop/focus/study-sessions/end/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Token ${localStorage.getItem('token')}`,
-        },
-      });
+
+      const session_id = localStorage.getItem("session_id");
+      if (session_id) {
+        await fetch('https://learningas.shop/focus/study-sessions/end/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Token ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({ session_id })
+        });
+        localStorage.removeItem("session_id");
+      }
+
+
+
+
       alert('측정 종료됨');
       navigate('/dashboard'); // ✅ 공부 끝 후 대시보드로 이동
     } catch (err) {
@@ -127,6 +189,7 @@ function StudySessionPage() {
 
   return (
     <div className="study-session">
+      <HomeButton />
       <h1>{isResting ? '휴식 중입니다.' : '공부 중입니다.'}</h1>
       <p>공부 시작 시간: {new Date(startTime).toLocaleTimeString()}</p>
       <p>누적 공부 시간: {formatTime(studyTime)}</p>
@@ -155,6 +218,10 @@ function StudySessionPage() {
       </button>
 
       <button onClick={handleStopPython}>공부 끝</button>
+
+      <button onClick={handleStopWebcam} style={{ backgroundColor: 'gray', color: 'white' }}>
+        캠 끄기
+      </button>
 
       <div style={{ marginTop: '40px' }}>
         <h2>📊 집중도 변화</h2>

@@ -3,7 +3,14 @@ import React from 'react';
 import FocusDashboard from '../components/FocusDashboard';
 
 function DashboardPage() {
-  return <FocusDashboard />;
+  const navigate = useNavigate();
+
+  return (
+    <div>
+      <HomeButton />
+      <FocusDashboard />
+    </div>
+  );
 }
 
 export default DashboardPage;

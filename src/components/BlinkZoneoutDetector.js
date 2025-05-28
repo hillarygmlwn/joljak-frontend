@@ -7,6 +7,8 @@ function BlinkZoneoutDetector() {
     const [zoningOutTime, setZoningOutTime] = useState(0);
     const [present, setPresent] = useState(false);
 
+    const blinkHistoryRef = useRef([]); // 🔔 최근 깜빡임 기록용
+
     // ✅ 실시간 전송용 ref
     const blinkCountRef = useRef(0);
     const eyeClosedTimeRef = useRef(0);
@@ -52,6 +54,8 @@ function BlinkZoneoutDetector() {
         const rightEAR = calcEAR(rightEye);
         const ear = (leftEAR + rightEAR) / 2;
 
+        const [lastAlertTime, setLastAlertTime] = useState(0);
+
         if (ear < blinkThreshold) {
             eyeCloseCounter++;
             setEyeClosedTime(prev => {
@@ -64,6 +68,23 @@ function BlinkZoneoutDetector() {
                     blinkCountRef.current = prev + 1;
                     return prev + 1;
                 });
+
+                // 🔔 깜빡임 기록 추가
+                const now = Date.now();
+                blinkHistoryRef.current.push(now);
+
+                // 🔔 5분 내 깜빡임 기록 유지
+                const fiveMinAgo = now - 5 * 60 * 1000;
+                blinkHistoryRef.current = blinkHistoryRef.current.filter(t => t > fiveMinAgo);
+
+                // 🔔 깜빡임 알림 조건 확인
+                if (blinkHistoryRef.current.length < 3) {
+                    const now = Date.now();
+                    if (now - lastAlertTime > 5 * 60 * 1000) { // 최소 5분 간격 알림
+                        alert('최근 5분간 깜빡임이 너무 적습니다. 휴식을 권장합니다.');
+                        setLastAlertTime(now);
+                    }
+                }
             }
             eyeCloseCounter = 0;
         }
@@ -91,13 +112,14 @@ function BlinkZoneoutDetector() {
         if (eyeStillFrames > stillThreshold && faceStillFrames > stillThreshold) {
             if (!zoneoutStarted) {
                 zoneoutStarted = true;
-                console.log('😵 멍 때리는 중...');
+                alert('😵‍💫 멍 때리는 중인 것 같아요! 집중해볼까요?');
             }
             setZoningOutTime(prev => {
                 zoningOutTimeRef.current = prev + 1;
                 return prev + 1;
             });
-        } else {
+        }
+        else {
             zoneoutStarted = false;
         }
     };
@@ -131,7 +153,9 @@ function BlinkZoneoutDetector() {
     // ✅ 전송: 10초마다 한 번씩만
     useEffect(() => {
         const interval = setInterval(() => {
+            const session_id = localStorage.getItem("session_id");
             const payload = {
+                session: session_id,
                 blink_count: blinkCountRef.current,
                 eyes_closed_time: parseFloat((eyeClosedTimeRef.current / 30).toFixed(2)),
                 zoning_out_time: parseFloat((zoningOutTimeRef.current / 30).toFixed(2)),
@@ -157,6 +181,11 @@ function BlinkZoneoutDetector() {
             blinkCountRef.current = 0;
             eyeClosedTimeRef.current = 0;
             zoningOutTimeRef.current = 0;
+
+            // ✅ 화면 표시 값도 초기화
+            setBlinkCount(0);
+            setEyeClosedTime(0);
+            setZoningOutTime(0);
         }, 10000);
 
         return () => clearInterval(interval);

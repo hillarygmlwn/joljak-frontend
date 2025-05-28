@@ -29,6 +29,9 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/study-place" element={<StudyPlacePage />} />
+        <Route path="/start-study" element={<StudyStartPage />} />
+        <Route path="/start" element={<StartPage />} />
         <Route path="/" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
