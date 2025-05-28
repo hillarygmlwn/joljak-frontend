@@ -8,7 +8,11 @@ import StudySessionPage from './pages/StudySessionPage';
 import './App.css';
 import FocusDetailPage from './pages/FocusDetailPage';
 import axios from 'axios';
-import BlinkZoneoutDetector from './components/BlinkZoneoutDetector';  // ✅ 경로 확인
+import BlinkZoneoutDetector from './components/BlinkZoneoutDetector'; 
+import StudyPlacePage from './pages/StudyPlacePage';
+import StudyStartPage from './pages/StudyStartPage';
+import StartPage from './pages/StartPage';
+ // ✅ 경로 확인
 // import TestWebcam from './pages/TestWebcam'; // ❌ 제거 가능
 
 axios.defaults.baseURL = 'https://learningas.shop';

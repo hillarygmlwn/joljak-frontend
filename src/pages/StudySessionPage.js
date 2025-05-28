@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import BlinkZoneoutDetector from '../components/BlinkZoneoutDetector';
 import './StudySessionPage.css';
 import { Bar } from 'react-chartjs-2';
+import HomeButton from '../components/HomeButton';  // 경로 확인 필요
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);

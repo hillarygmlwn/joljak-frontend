@@ -6,6 +6,7 @@ function BlinkZoneoutDetector() {
     const [eyeClosedTime, setEyeClosedTime] = useState(0);
     const [zoningOutTime, setZoningOutTime] = useState(0);
     const [present, setPresent] = useState(false);
+    const [lastAlertTime, setLastAlertTime] = useState(0);
 
     const blinkHistoryRef = useRef([]); // 🔔 최근 깜빡임 기록용
 
@@ -54,7 +55,7 @@ function BlinkZoneoutDetector() {
         const rightEAR = calcEAR(rightEye);
         const ear = (leftEAR + rightEAR) / 2;
 
-        const [lastAlertTime, setLastAlertTime] = useState(0);
+      
 
         if (ear < blinkThreshold) {
             eyeCloseCounter++;
