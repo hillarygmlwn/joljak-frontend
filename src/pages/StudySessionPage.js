@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import BlinkZoneoutDetector from '../components/BlinkZoneoutDetector';
 import './StudySessionPage.css';
 import { Bar } from 'react-chartjs-2';
-import HomeButton from '../components/HomeButton';  // 경로 확인 필요
+import HomeButton from '../components/HomeButton';
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
@@ -19,35 +19,34 @@ function StudySessionPage() {
   const navigate = useNavigate();
 
   const sendEventToBackend = async (eventType) => {
-  const session_id = localStorage.getItem("session_id");
-  if (!session_id) return;
+    const session_id = localStorage.getItem("session_id");
+    if (!session_id) return;
 
-  const payload = {
-    session_id,
-    event_type: eventType,
-    timestamp: new Date().toISOString(),
-  };
+    const payload = {
+      session_id,
+      event_type: eventType,
+      timestamp: new Date().toISOString(),
+    };
 
-  try {
-    const res = await fetch('https://learningas.shop/focus/event/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Token ${localStorage.getItem('token')}`,
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch('https://learningas.shop/focus/event/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Token ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(payload),
+      });
 
-    if (!res.ok) {
-      console.warn('이벤트 전송 실패:', await res.text());
-    } else {
-      console.log(`✅ 이벤트 전송 완료: ${eventType}`);
+      if (!res.ok) {
+        console.warn('이벤트 전송 실패:', await res.text());
+      } else {
+        console.log(`✅ 이벤트 전송 완료: ${eventType}`);
+      }
+    } catch (err) {
+      console.error('❌ 이벤트 전송 중 오류:', err);
     }
-  } catch (err) {
-    console.error('❌ 이벤트 전송 중 오류:', err);
-  }
-};
-
+  };
 
   const handleStartPython = async () => {
     if (isRunning) {
@@ -81,7 +80,7 @@ function StudySessionPage() {
         alert(data?.error || '서버 오류');
       } else {
         console.log('📦 공부 시작 정보 전송됨:', data);
-        localStorage.setItem("session_id", data.session_id); // ✅ 세션 ID 저장
+        localStorage.setItem("session_id", data.session_id);
       }
     } catch (err) {
       console.error('❌ 웹캠 또는 서버 요청 실패:', err);
@@ -102,14 +101,13 @@ function StudySessionPage() {
 
   const handleStopPython = async () => {
     try {
-
-      // 캠 끄기
       const video = document.getElementById('webcam');
       if (video?.srcObject) {
         video.srcObject.getTracks().forEach(track => track.stop());
         video.srcObject = null;
         console.log('📷 웹캠 자동 종료됨');
       }
+
       await fetch('https://start-focus-server.onrender.com/stop', { method: 'POST' });
 
       const session_id = localStorage.getItem("session_id");
@@ -125,11 +123,8 @@ function StudySessionPage() {
         localStorage.removeItem("session_id");
       }
 
-
-
-
       alert('측정 종료됨');
-      navigate('/dashboard'); // ✅ 공부 끝 후 대시보드로 이동
+      navigate('/dashboard');
     } catch (err) {
       console.error('❌ Python 종료 요청 실패:', err);
       alert('서버 요청 실패');
@@ -189,57 +184,50 @@ function StudySessionPage() {
   }, [isResting]);
 
   return (
-    <div className="study-session">
-      <HomeButton />
-      <h1>{isResting ? '휴식 중입니다.' : '공부 중입니다.'}</h1>
-      <p>공부 시작 시간: {new Date(startTime).toLocaleTimeString()}</p>
-      <p>누적 공부 시간: {formatTime(studyTime)}</p>
-      <p>누적 휴식 시간: {formatTime(restTime)}</p>
+    <div style={{ minHeight: '100vh', overflowY: 'auto', padding: '30px 0', backgroundColor: '#f4f4f4' }}>
+      <div className="study-session">
+        <HomeButton />
+        <h1>{isResting ? '휴식 중입니다.' : '공부 중입니다.'}</h1>
+        <p>공부 시작 시간: {new Date(startTime).toLocaleTimeString()}</p>
+        <p>누적 공부 시간: {formatTime(studyTime)}</p>
+        <p>누적 휴식 시간: {formatTime(restTime)}</p>
+        <p>공부 장소: {place || '선택 안됨'}</p>
 
-      <div>
-        <h3>공부 장소 선택</h3>
-        {['카페', '도서관', '학교'].map((p) => (
-          <button key={p} onClick={() => setPlace(p)} style={{ marginRight: '10px' }}>
-            {p}
-          </button>
-        ))}
-        <p>선택한 장소: {place || '없음'}</p>
+        <button className="rest-btn" onClick={toggleRest}>
+          {isResting ? '휴식 끝' : '휴식 시작'}
+        </button>
+
+        <button
+          style={{ backgroundColor: 'red', color: 'white', marginTop: '10px' }}
+          onClick={handleStartPython}
+          disabled={!place}
+        >
+          공부 시작
+        </button>
+
+        <button className="end-btn" onClick={handleStopPython}>공부 끝</button>
+
+        <button onClick={handleStopWebcam} style={{ backgroundColor: 'gray', color: 'white', marginTop: '10px' }}>
+          캠 끄기
+        </button>
+
+        <div style={{ marginTop: '40px' }}>
+          <h2>📊 집중도 변화</h2>
+          <Bar data={chartData} />
+        </div>
+
+        <BlinkZoneoutDetector />
+
+        <video
+          id="webcam"
+          autoPlay
+          playsInline
+          muted
+          width="640"
+          height="480"
+          style={{ border: '1px solid gray', marginTop: '20px' }}
+        />
       </div>
-
-      <button className="rest-btn" onClick={toggleRest}>
-        {isResting ? '휴식 끝' : '휴식 시작'}
-      </button>
-
-      <button
-        style={{ backgroundColor: 'red', color: 'white' }}
-        onClick={handleStartPython}
-        disabled={!place} // 장소 미선택 시 비활성화
-      >
-        공부 시작
-      </button>
-
-      <button onClick={handleStopPython}>공부 끝</button>
-
-      <button onClick={handleStopWebcam} style={{ backgroundColor: 'gray', color: 'white' }}>
-        캠 끄기
-      </button>
-
-      <div style={{ marginTop: '40px' }}>
-        <h2>📊 집중도 변화</h2>
-        <Bar data={chartData} />
-      </div>
-
-      <BlinkZoneoutDetector />
-
-      <video
-        id="webcam"
-        autoPlay
-        playsInline
-        muted
-        width="640"
-        height="480"
-        style={{ border: '1px solid gray', marginTop: '20px' }}
-      />
     </div>
   );
 }
