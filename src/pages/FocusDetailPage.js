@@ -89,32 +89,32 @@ const FocusDetailPage = () => {
     axios
       .get(`https://learningas.shop/focus/data/?date=${date}`)
       .then((res) => {
-        console.log("✅ 백엔드 응답:", res.data); // ✅ 이 줄 추가!
-        const raw = res.data.timeline || [];
+        console.log("✅ 백엔드 응답:", res.data);
+        const raw = res.data.hourly_stats || [];
 
-        // 데이터 유효성 검사 및 디버깅
-        console.log("📈 10초 집중도 데이터:", raw);
+        console.log("📈 시간별 집중도 데이터:", raw);
 
         if (!Array.isArray(raw)) {
-          console.error("📛 timeline 데이터가 배열이 아닙니다.", raw);
+          console.error("📛 hourly_stats가 배열이 아닙니다.", raw);
           return;
         }
 
         setFocusScoreGraphData({
-          labels: raw.map((r) => r.time ?? 'Unknown'),
+          labels: raw.map((r) => r.hour?.slice(11, 16) ?? 'Unknown'), // HH:MM 포맷
           datasets: [
             {
-              label: '10초 단위 집중도 점수',
-              data: raw.map((r) => typeof r.focus_score === 'number' ? r.focus_score : 0),
+              label: '집중도 점수 (평균)',
+              data: raw.map((r) => r.count ? Math.round(100 - (r.total_zoning_time / (r.count * 10)) * 100) : 0),
               backgroundColor: 'rgba(54, 162, 235, 0.6)',
             },
           ],
         });
       })
       .catch((err) => {
-        console.error("❌ 10초 단위 집중도 로딩 실패", err);
+        console.error("❌ 집중도 그래프 로딩 실패", err);
       });
   }, [date]);
+
 
   const formatTime = (seconds) => {
     const min = Math.floor(seconds / 60);
