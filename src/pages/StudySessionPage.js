@@ -211,10 +211,7 @@ function StudySessionPage() {
           캠 끄기
         </button>
 
-        <div style={{ marginTop: '40px' }}>
-          <h2>📊 집중도 변화</h2>
-          <Bar data={chartData} />
-        </div>
+        
 
         <BlinkZoneoutDetector />
 
