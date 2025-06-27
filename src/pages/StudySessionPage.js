@@ -1,35 +1,34 @@
-// StudySessionPage.js
+// src/pages/StudySessionPage.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BlinkZoneoutDetector from './components/BlinkZoneoutDetector';
+import BlinkZoneoutDetector from '../components/BlinkZoneoutDetector';
+import HomeButton          from '../components/HomeButton';
 import './StudySessionPage.css';
-import HomeButton from './components/HomeButton';
 
 function StudySessionPage() {
-  const [isRunning, setIsRunning] = useState(false);
-  const [isResting, setIsResting] = useState(false);
-  const [studyTime, setStudyTime] = useState(0);
-  const [restTime, setRestTime] = useState(0);
-  const [place, setPlace] = useState(localStorage.getItem('place') || '');
+  const [isRunning, setIsRunning]   = useState(false);
+  const [isResting, setIsResting]   = useState(false);
+  const [studyTime,  setStudyTime]  = useState(0);
+  const [restTime,   setRestTime]   = useState(0);
+  const [place,      setPlace]      = useState(localStorage.getItem('place') || '');
   const navigate = useNavigate();
 
   // 1초 단위 공부/휴식 시간 카운트
   useEffect(() => {
     const timer = setInterval(() => {
       if (isRunning) {
-        if (isResting) setRestTime((prev) => prev + 1);
-        else setStudyTime((prev) => prev + 1);
+        if (isResting) setRestTime(prev => prev + 1);
+        else setStudyTime(prev => prev + 1);
       }
     }, 1000);
     return () => clearInterval(timer);
   }, [isRunning, isResting]);
 
-  // 10초마다 백엔드에 FocusData 업로드
+  // 10초마다 FocusData 업로드
   useEffect(() => {
     let uploadInterval;
     if (isRunning) {
       uploadInterval = setInterval(() => {
-        // 백엔드가 세션을 _get_current_session(user) 으로 찾으므로 body에 session_id 불필요
         fetch('https://learningas.shop/focus/upload/', {
           method: 'POST',
           headers: {
@@ -38,14 +37,14 @@ function StudySessionPage() {
           },
           body: JSON.stringify({
             time: new Date().toISOString(),
-            blink_count: 0,          // BlinkZoneoutDetector와 연동 필요시 실제 값으로 교체
-            eyes_closed_time: 0.0,   // 실제 측정값으로 교체
-            zoning_out_time: 0.0,    // 실제 측정값으로 교체
+            blink_count: 0,          // TODO: 실제 센서 연동
+            eyes_closed_time: 0.0,   // TODO: 실제 센서 연동
+            zoning_out_time: 0.0,    // TODO: 실제 센서 연동
             present: !isResting,
           }),
-        }).then((res) => {
-          if (!res.ok) console.warn('FocusData 업로드 실패:', res.statusText);
-        }).catch((err) => console.error('업로드 에러:', err));
+        })
+        .then(res => { if (!res.ok) console.warn('업로드 실패:', res.statusText); })
+        .catch(err => console.error('업로드 에러:', err));
       }, 10000);
     }
     return () => clearInterval(uploadInterval);
@@ -64,7 +63,7 @@ function StudySessionPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '시작 실패');
-      localStorage.setItem('session_id', data.session);  
+      localStorage.setItem('session_id', data.session);
       setIsRunning(true);
     } catch (err) {
       console.error('공부 시작 오류:', err);
@@ -91,9 +90,9 @@ function StudySessionPage() {
     }
   };
 
-  const toggleRest = () => setIsResting((prev) => !prev);
+  const toggleRest = () => setIsResting(prev => !prev);
 
-  const formatTime = (sec) => {
+  const formatTime = sec => {
     const m = Math.floor(sec / 60);
     const s = sec % 60;
     return `${m}분 ${s}초`;
@@ -102,19 +101,26 @@ function StudySessionPage() {
   return (
     <div className="study-session-page">
       <HomeButton />
-      <h1>{isResting ? '휴식 중' : isRunning ? '공부 중' : '준비 상태'}</h1>
+      <h1>
+        { !isRunning ? '준비 상태'
+          : isResting  ? '☕ 휴식 중'
+          :             '📚 공부 중'
+        }
+      </h1>
       <p>누적 공부 시간: {formatTime(studyTime)}</p>
       <p>누적 휴식 시간: {formatTime(restTime)}</p>
       <p>장소: {place || '선택 필요'}</p>
 
-      {!isRunning ? (
-        <button onClick={handleStart} disabled={!place}>📚 공부 시작</button>
-      ) : (
-        <>
-          <button onClick={toggleRest}>{isResting ? '▶️ 재개' : '☕ 휴식'}</button>
-          <button onClick={handleEnd} style={{ marginLeft: 8 }}>🏁 공부 종료</button>
-        </>
-      )}
+      {!isRunning
+        ? <button onClick={handleStart} disabled={!place}>📚 공부 시작</button>
+        : (
+          <>
+            <button onClick={toggleRest}>
+              {isResting ? '▶️ 재개' : '☕ 휴식'}
+            </button>
+            <button onClick={handleEnd} style={{ marginLeft: 8 }}>🏁 공부 종료</button>
+          </>
+        )}
 
       <BlinkZoneoutDetector />
 
