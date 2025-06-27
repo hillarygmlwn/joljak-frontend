@@ -19,13 +19,14 @@ function StudyPlacePage() {
   };
 
   const placeOptions = [
-    { label: '학교', value: 'school', left: 172, img: '/assets/school.png' },
-    { label: '도서실', value: 'library', left: 574, img: '/assets/library.png' },
-    { label: '카페', value: 'cafe', left: 976, img: '/assets/cafe.png' }
+    { label: '학교', value: 'school', left: 172, img: process.env.PUBLIC_URL + '/assets/school.png' },
+    { label: '도서실', value: 'library', left: 574, img: process.env.PUBLIC_URL + '/assets/library.png' },
+    { label: '카페', value: 'cafe', left: 976, img: process.env.PUBLIC_URL + '/assets/cafe.png' }
   ];
 
+
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', background: 'white', overflow: 'hidden' }}>
+    <div style={{ width: '100%', height: '100vh', position: 'relative', background: 'white', overflow: 'hidden' }}>
       <div style={{ left: 558, top: 112, position: 'absolute', color: 'black', fontSize: 36, fontFamily: 'Inter', fontWeight: '600' }}>
         어느 장소에 계신가요?
       </div>
