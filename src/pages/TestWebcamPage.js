@@ -47,13 +47,13 @@ function FocusDashboard() {
             alert(data.message || "서버 응답 없음");
 
             // 팝업 열기 (측정 페이지)
-            window.open(
-                "https://joljak-frontend.vercel.app/test-webcam",
-                "focusWindow",
-                "width=800,height=600,left=200,top=100"
-            );
+            // window.open(
+            //     "https://joljak-frontend.vercel.app/test-webcam",
+            //     "focusWindow",
+            //     "width=800,height=600,left=200,top=100"
+            // );
 
-            // navigate('/study'); // 기존 페이지 이동은 생략하거나 유지 가능
+            navigate('/study'); // 기존 페이지 이동은 생략하거나 유지 가능
         } catch (err) {
             console.error("서버 요청 실패:", err);
             alert("서버 요청 중 오류 발생!");
