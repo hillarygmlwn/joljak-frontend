@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import schoolImg from '../assets/school.png';
-import libraryImg from '../assets/library.png';
-import cafeImg from '../assets/cafe.png';
+// import schoolImg from '../assets/school.png';
+// import libraryImg from '../assets/library.png';
+// import cafeImg from '../assets/cafe.png';
 
 function StudyPlacePage() {
   const [selectedPlace, setSelectedPlace] = useState(null);
@@ -19,9 +19,9 @@ function StudyPlacePage() {
   };
 
   const placeOptions = [
-    { label: '학교', value: 'school', left: 172, img: schoolImg },
-    { label: '도서실', value: 'library', left: 574, img: libraryImg },
-    { label: '카페', value: 'cafe', left: 976, img: cafeImg }
+    { label: '학교', value: 'school', left: 172, img: '/assets/school.png' },
+    { label: '도서실', value: 'library', left: 574, img: '/assets/library.png' },
+    { label: '카페', value: 'cafe', left: 976, img: '/assets/cafe.png' }
   ];
 
   return (
