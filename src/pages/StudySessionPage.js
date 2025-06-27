@@ -1,230 +1,124 @@
+// StudySessionPage.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BlinkZoneoutDetector from '../components/BlinkZoneoutDetector';
+import BlinkZoneoutDetector from './components/BlinkZoneoutDetector';
 import './StudySessionPage.css';
-import { Bar } from 'react-chartjs-2';
-import HomeButton from '../components/HomeButton';
-import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
-
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+import HomeButton from './components/HomeButton';
 
 function StudySessionPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [isResting, setIsResting] = useState(false);
-  const [startTime] = useState(Date.now());
   const [studyTime, setStudyTime] = useState(0);
   const [restTime, setRestTime] = useState(0);
-  const [focusData, setFocusData] = useState([]);
   const [place, setPlace] = useState(localStorage.getItem('place') || '');
   const navigate = useNavigate();
 
-  const sendEventToBackend = async (eventType) => {
-    const session_id = localStorage.getItem("session_id");
-    if (!session_id) return;
-
-    const payload = {
-      session_id,
-      event_type: eventType,
-      timestamp: new Date().toISOString(),
-    };
-
-    try {
-      const res = await fetch('https://learningas.shop/focus/event/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Token ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        console.warn('이벤트 전송 실패:', await res.text());
-      } else {
-        console.log(`✅ 이벤트 전송 완료: ${eventType}`);
+  // 1초 단위 공부/휴식 시간 카운트
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (isRunning) {
+        if (isResting) setRestTime((prev) => prev + 1);
+        else setStudyTime((prev) => prev + 1);
       }
-    } catch (err) {
-      console.error('❌ 이벤트 전송 중 오류:', err);
-    }
-  };
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isRunning, isResting]);
 
-  const handleStartPython = async () => {
+  // 10초마다 백엔드에 FocusData 업로드
+  useEffect(() => {
+    let uploadInterval;
     if (isRunning) {
-      console.log('⚠️ 이미 실행 중입니다.');
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      const video = document.getElementById('webcam');
-      if (video) {
-        video.srcObject = stream;
-        video.play();
-      }
-      console.log('✅ 웹캠 실행됨');
-      setIsRunning(true);
-
-      const token = localStorage.getItem('token');
-      const res = await fetch('https://learningas.shop/focus/study-sessions/start/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Token ${token}`
-        },
-        body: JSON.stringify({ place })
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        console.warn('공부 시작 백엔드 실패:', data);
-        alert(data?.error || '서버 오류');
-      } else {
-        console.log('📦 공부 시작 정보 전송됨:', data);
-        localStorage.setItem("session_id", data.session_id);
-      }
-    } catch (err) {
-      console.error('❌ 웹캠 또는 서버 요청 실패:', err);
-    }
-  };
-
-  const handleStopWebcam = () => {
-    const video = document.getElementById('webcam');
-    if (video?.srcObject) {
-      video.srcObject.getTracks().forEach(track => track.stop());
-      video.srcObject = null;
-      console.log('📷 웹캠 꺼짐');
-      alert('웹캠이 꺼졌습니다.');
-    } else {
-      alert('웹캠이 이미 꺼져있거나 연결되지 않았습니다.');
-    }
-  };
-
-  const handleStopPython = async () => {
-    try {
-      const video = document.getElementById('webcam');
-      if (video?.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
-        console.log('📷 웹캠 자동 종료됨');
-      }
-
-      await fetch('https://start-focus-server.onrender.com/stop', { method: 'POST' });
-
-      const session_id = localStorage.getItem("session_id");
-      if (session_id) {
-        await fetch('https://learningas.shop/focus/study-sessions/end/', {
+      uploadInterval = setInterval(() => {
+        // 백엔드가 세션을 _get_current_session(user) 으로 찾으므로 body에 session_id 불필요
+        fetch('https://learningas.shop/focus/upload/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Token ${localStorage.getItem('token')}`,
           },
-          body: JSON.stringify({ session_id })
-        });
-        localStorage.removeItem("session_id");
-      }
+          body: JSON.stringify({
+            time: new Date().toISOString(),
+            blink_count: 0,          // BlinkZoneoutDetector와 연동 필요시 실제 값으로 교체
+            eyes_closed_time: 0.0,   // 실제 측정값으로 교체
+            zoning_out_time: 0.0,    // 실제 측정값으로 교체
+            present: !isResting,
+          }),
+        }).then((res) => {
+          if (!res.ok) console.warn('FocusData 업로드 실패:', res.statusText);
+        }).catch((err) => console.error('업로드 에러:', err));
+      }, 10000);
+    }
+    return () => clearInterval(uploadInterval);
+  }, [isRunning, isResting]);
 
-      alert('측정 종료됨');
-      navigate('/dashboard');
+  const handleStart = async () => {
+    if (isRunning || !place) return;
+    try {
+      const res = await fetch('https://learningas.shop/focus/study-sessions/start/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ place }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '시작 실패');
+      localStorage.setItem('session_id', data.session);  
+      setIsRunning(true);
     } catch (err) {
-      console.error('❌ Python 종료 요청 실패:', err);
-      alert('서버 요청 실패');
+      console.error('공부 시작 오류:', err);
+      alert(err.message);
     }
   };
 
-  const toggleRest = () => {
-    setIsResting((prev) => !prev);
+  const handleEnd = async () => {
+    try {
+      const res = await fetch('https://learningas.shop/focus/study-sessions/end/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${localStorage.getItem('token')}`,
+        },
+      });
+      if (!res.ok) throw new Error(await res.text());
+      localStorage.removeItem('session_id');
+      setIsRunning(false);
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('공부 종료 오류:', err);
+      alert(err.message);
+    }
   };
 
-  const formatTime = (totalSeconds) => {
-    const hours = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((totalSeconds % 3600) / 60);
-    const secs = totalSeconds % 60;
-    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
+  const toggleRest = () => setIsResting((prev) => !prev);
 
-  const chartData = {
-    labels: focusData.map((d) => formatTime(d.time)),
-    datasets: [
-      {
-        label: '공부 집중도',
-        data: focusData.map((d) => d.isRest ? null : d.score),
-        backgroundColor: 'rgba(75, 192, 192, 0.7)',
-      },
-      {
-        label: '휴식 시간',
-        data: focusData.map((d) => d.isRest ? 10 : null),
-        backgroundColor: 'rgba(160, 160, 160, 0.5)',
-      },
-    ],
+  const formatTime = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}분 ${s}초`;
   };
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (isResting) {
-        setRestTime((prev) => prev + 1);
-      } else {
-        setStudyTime((prev) => {
-          const newTime = prev + 1;
-          if (newTime % 600 === 0) {
-            const focusScore = Math.floor(Math.random() * 50) + 50;
-            setFocusData((prevData) => [
-              ...prevData,
-              {
-                time: newTime,
-                score: isResting ? 0 : focusScore,
-                isRest: isResting,
-              },
-            ]);
-          }
-          return newTime;
-        });
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isResting]);
 
   return (
-    <div style={{ minHeight: '100vh', overflowY: 'auto', padding: '30px 0', backgroundColor: '#f4f4f4', boxSizing: 'border-box' }}>
-      <div className="study-session">
-        <HomeButton />
-        <h1>{isResting ? '휴식 중입니다.' : '공부 중입니다.'}</h1>
-        <p>공부 시작 시간: {new Date(startTime).toLocaleTimeString()}</p>
-        <p>누적 공부 시간: {formatTime(studyTime)}</p>
-        <p>누적 휴식 시간: {formatTime(restTime)}</p>
-        <p>공부 장소: {place || '선택 안됨'}</p>
+    <div className="study-session-page">
+      <HomeButton />
+      <h1>{isResting ? '휴식 중' : isRunning ? '공부 중' : '준비 상태'}</h1>
+      <p>누적 공부 시간: {formatTime(studyTime)}</p>
+      <p>누적 휴식 시간: {formatTime(restTime)}</p>
+      <p>장소: {place || '선택 필요'}</p>
 
-        <button className="rest-btn" onClick={toggleRest}>
-          {isResting ? '휴식 끝' : '휴식 시작'}
-        </button>
+      {!isRunning ? (
+        <button onClick={handleStart} disabled={!place}>📚 공부 시작</button>
+      ) : (
+        <>
+          <button onClick={toggleRest}>{isResting ? '▶️ 재개' : '☕ 휴식'}</button>
+          <button onClick={handleEnd} style={{ marginLeft: 8 }}>🏁 공부 종료</button>
+        </>
+      )}
 
-        <button
-          style={{ backgroundColor: 'red', color: 'white', marginTop: '10px' }}
-          onClick={handleStartPython}
-          disabled={!place}
-        >
-          공부 시작
-        </button>
+      <BlinkZoneoutDetector />
 
-        <button className="end-btn" onClick={handleStopPython}>공부 끝</button>
-
-        <button onClick={handleStopWebcam} style={{ backgroundColor: 'gray', color: 'white', marginTop: '10px' }}>
-          캠 끄기
-        </button>
-
-        
-
-        <BlinkZoneoutDetector />
-
-        <video
-          id="webcam"
-          autoPlay
-          playsInline
-          muted
-          width="640"
-          height="480"
-          style={{ border: '1px solid gray', marginTop: '20px' }}
-        />
-      </div>
+      <video id="webcam" autoPlay playsInline muted width="640" height="480" />
     </div>
   );
 }
