@@ -15,6 +15,7 @@ function StudyPlacePage() {
       return;
     }
     // 선택한 장소 저장 로직 필요시 추가
+    localStorage.setItem('place', selectedPlace);  // ✅ 추가
     navigate('/study');
   };
 

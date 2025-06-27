@@ -15,7 +15,7 @@ function StudySessionPage() {
   const [studyTime, setStudyTime] = useState(0);
   const [restTime, setRestTime] = useState(0);
   const [focusData, setFocusData] = useState([]);
-  const [place, setPlace] = useState('');
+  const [place, setPlace] = useState(localStorage.getItem('place') || '');
   const navigate = useNavigate();
 
   const sendEventToBackend = async (eventType) => {
