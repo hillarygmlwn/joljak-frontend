@@ -29,7 +29,7 @@ const FocusDetailPage = () => {
   const [blinkGraphData, setBlinkGraphData] = useState(null);
   const [focusScoreGraphData, setFocusScoreGraphData] = useState(null);
 
-  // 1) 하루 요약 불러오기
+  // ✅ 1. 하루 요약 불러오기
   useEffect(() => {
     axios
       .get(`https://learningas.shop/focus/summary/?date=${date}`)
@@ -37,7 +37,7 @@ const FocusDetailPage = () => {
       .catch((err) => console.error("요약 정보 불러오기 실패", err));
   }, [date]);
 
-  // 2) 시간대별 활동 (자리 이탈, 멍 때림)
+  // ✅ 2. 시간대별 활동 (자리 이탈, 멍 때림)
   useEffect(() => {
     axios
       .get(`https://learningas.shop/focus/timeline/?date=${date}`)
@@ -62,7 +62,7 @@ const FocusDetailPage = () => {
       .catch((err) => console.error("timeline 로딩 실패", err));
   }, [date]);
 
-  // 3) 60초 단위 깜빡임 요약
+  // ✅ 3. 60초 단위 깜빡임 요약
   useEffect(() => {
     axios
       .get(`https://learningas.shop/focus/blink_summary/?date=${date}`)
@@ -84,10 +84,10 @@ const FocusDetailPage = () => {
       .catch((err) => console.error("blink summary 로딩 실패", err));
   }, [date]);
 
-  // 4) 10초 단위 집중도 점수
+  // ✅ 4. 10초 단위 집중도 점수
   useEffect(() => {
     axios
-      .get(`https://learningas.shop/focus/timeline-detail/?date=${date}`)
+      .get(`https://learningas.shop/focus/data/?date=${date}`)
       .then((res) => {
         const raw = res.data.timeline;
         setFocusScoreGraphData({
@@ -95,7 +95,7 @@ const FocusDetailPage = () => {
           datasets: [
             {
               label: '10초 단위 집중도 점수',
-              data: raw.map((r) => r.focus_score),
+              data: raw.map((r) => r.score),
               backgroundColor: 'rgba(54, 162, 235, 0.6)',
             },
           ],
@@ -111,7 +111,6 @@ const FocusDetailPage = () => {
   };
 
   const getDetailedFeedback = (summary) => {
-    // present_ratio가 1이면 전 구간 자리에 앉아 있었던 것으로 간주
     const present = summary.present_ratio === 1;
     const heartRateStable = summary.heart_rate;
 
