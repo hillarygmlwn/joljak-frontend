@@ -89,19 +89,20 @@ const FocusDetailPage = () => {
     axios
       .get(`https://learningas.shop/focus/data/?date=${date}`)
       .then((res) => {
-        const raw = res.data.timeline;
+        const raw = res.data.timeline || [];
         setFocusScoreGraphData({
           labels: raw.map((r) => r.time),
           datasets: [
             {
               label: '10초 단위 집중도 점수',
-              data: raw.map((r) => r.score),
+              data: raw.map((r) => r.focus_score),
               backgroundColor: 'rgba(54, 162, 235, 0.6)',
             },
           ],
         });
       })
       .catch((err) => console.error("10초 단위 집중도 로딩 실패", err));
+
   }, [date]);
 
   const formatTime = (seconds) => {
