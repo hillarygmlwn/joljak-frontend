@@ -25,7 +25,7 @@ const FocusDetailPage = () => {
   // 1) 하루 요약
   useEffect(() => {
     axios
-      .get(`https://learningas.shop/focus/summary/?date=${date}`)
+      .get(`/summary/?date=${date}`)
       .then((res) => setSummary(res.data))
       .catch((err) => console.error('요약 불러오기 실패', err));
   }, [date]);
@@ -33,7 +33,7 @@ const FocusDetailPage = () => {
   // 2) 자리 이탈·멍
   useEffect(() => {
     axios
-      .get(`https://learningas.shop/focus/timeline/?date=${date}`)
+      .get(`/timeline/?date=${date}`)
       .then((res) => {
         const raw = res.data.timeline;
         setTimelineData({
@@ -50,7 +50,7 @@ const FocusDetailPage = () => {
   // 3) 60초 단위 깜빡임
   useEffect(() => {
     axios
-      .get(`https://learningas.shop/focus/blink_summary/?date=${date}`)
+      .get(`/blink_summary/?date=${date}`)
       .then((res) => {
         const tl = res.data.timeline;
         setBlinkData({
@@ -64,7 +64,7 @@ const FocusDetailPage = () => {
   // 4) 10초 단위 집중도 (focus_score)
   useEffect(() => {
     axios
-      .get(`https://learningas.shop/focus/focus/timeline-detail/?date=${date}`)
+      .get(`/timeline-detail/?date=${date}`)
       .then((res) => {
         const raw = res.data.timeline;
         setFocusScoreData({
