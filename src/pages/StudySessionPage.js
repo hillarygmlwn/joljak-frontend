@@ -184,7 +184,7 @@ function StudySessionPage() {
   }, [isResting]);
 
   return (
-    <div style={{ minHeight: '100vh', overflowY: 'auto', padding: '30px 0', backgroundColor: '#f4f4f4' }}>
+    <div style={{ minHeight: '100vh', overflowY: 'auto', padding: '30px 0', backgroundColor: '#f4f4f4', boxSizing: 'border-box' }}>
       <div className="study-session">
         <HomeButton />
         <h1>{isResting ? '휴식 중입니다.' : '공부 중입니다.'}</h1>
