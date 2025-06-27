@@ -89,20 +89,31 @@ const FocusDetailPage = () => {
     axios
       .get(`https://learningas.shop/focus/data/?date=${date}`)
       .then((res) => {
+        console.log("✅ 백엔드 응답:", res.data); // ✅ 이 줄 추가!
         const raw = res.data.timeline || [];
+
+        // 데이터 유효성 검사 및 디버깅
+        console.log("📈 10초 집중도 데이터:", raw);
+
+        if (!Array.isArray(raw)) {
+          console.error("📛 timeline 데이터가 배열이 아닙니다.", raw);
+          return;
+        }
+
         setFocusScoreGraphData({
-          labels: raw.map((r) => r.time),
+          labels: raw.map((r) => r.time ?? 'Unknown'),
           datasets: [
             {
               label: '10초 단위 집중도 점수',
-              data: raw.map((r) => r.focus_score),
+              data: raw.map((r) => typeof r.focus_score === 'number' ? r.focus_score : 0),
               backgroundColor: 'rgba(54, 162, 235, 0.6)',
             },
           ],
         });
       })
-      .catch((err) => console.error("10초 단위 집중도 로딩 실패", err));
-
+      .catch((err) => {
+        console.error("❌ 10초 단위 집중도 로딩 실패", err);
+      });
   }, [date]);
 
   const formatTime = (seconds) => {
@@ -185,7 +196,7 @@ const FocusDetailPage = () => {
             </div>
           )}
 
-          {focusScoreGraphData && (
+          {focusScoreGraphData && focusScoreGraphData.labels.length > 0 ? (
             <div style={{ marginTop: "40px" }}>
               <h3>🎯 10초 단위 집중도 점수</h3>
               <Bar
@@ -197,14 +208,25 @@ const FocusDetailPage = () => {
                     title: { display: true, text: '집중도 점수 (10초 단위)' }
                   },
                   scales: {
-                    y: { beginAtZero: true, suggestedMax: 100, title: { display: true, text: '점수' } },
-                    x: { title: { display: true, text: '시간 (HH:MM:SS)' } }
-                  }
+                    y: {
+                      beginAtZero: true,
+                      suggestedMax: 100,
+                      title: { display: true, text: '점수' },
+                    },
+                    x: {
+                      title: { display: true, text: '시간 (HH:MM:SS)' },
+                      ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 15, // 시간 많아지면 축 밀리는 문제 방지
+                      },
+                    },
+                  },
                 }}
               />
             </div>
+          ) : (
+            <p>⚠️ 집중도 데이터 없음 또는 로딩 실패</p>
           )}
-
         </div>
       ) : (
         <p>데이터 로딩 중...</p>
