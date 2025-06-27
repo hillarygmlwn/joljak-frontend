@@ -144,7 +144,7 @@ function BlinkZoneoutDetector() {
             const isoTime = now.toISOString().slice(0, 19); // "2025-06-27T10:49:15"
 
             const payload = {
-                session: sessionId,  // ✅ 반드시 유효한 세션 ID
+                session: session_Id,  // ✅ 반드시 유효한 세션 ID
                 blink_count: blinkCountRef.current,
                 eyes_closed_time: eyeClosedTimeRef.current,
                 zoning_out_time: zoningOutTimeRef.current,
