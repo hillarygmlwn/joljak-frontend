@@ -217,7 +217,7 @@ const FocusDetailPage = () => {
                       title: { display: true, text: '시간 (HH:MM:SS)' },
                       ticks: {
                         autoSkip: true,
-                        maxTicksLimit: 15, // 시간 많아지면 축 밀리는 문제 방지
+                        maxTicksLimit: 10, // 시간 많아지면 축 밀리는 문제 방지
                       },
                     },
                   },
