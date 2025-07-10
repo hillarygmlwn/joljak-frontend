@@ -16,6 +16,16 @@ function FocusDashboard() {
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
+  // 로그아웃 핸들러
+  const handleLogout = () => {
+    // 1) 로컬스토리지 토큰 제거
+    localStorage.removeItem('token');
+    // 2) AuthContext의 logout 함수 호출 (필요하다면)
+    if (logout) logout();  
+    // 3) 로그인 페이지로 이동
+    navigate('/login');
+  };
+
   useEffect(() => {
 
     const fetchData = async () => {
@@ -97,7 +107,10 @@ function FocusDashboard() {
         <div className="menu">유저설정</div>
         <div className="menu">캘린더</div>
         <div className="menu">예비1</div>
-        <div className="menu logout">로그아웃</div>
+        {/* 로그아웃 메뉴에 onClick 연결 */}
+        <div className="menu logout" onClick={handleLogout}>
+        로그아웃
+        </div>
       </div>
 
       <div className="dashboard-layout">
