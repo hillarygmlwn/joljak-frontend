@@ -51,16 +51,7 @@ function FocusDashboard() {
         // 응답에 date 필드가 없으면 latestDate를 직접 붙여줍니다
         setTodaySummary({ ...resLatest.data, date: latestDate });
 
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-
-        const resToday = await axios.get(`https://learningas.shop/focus/summary/?date=${dateStr}`, {
-          headers: { Authorization: `Token ${token}` }
-        });
-        setTodaySummary(resToday.data);
+        
       } catch (err) {
         console.error("집중 점수 요약 불러오기 실패", err);
       }
