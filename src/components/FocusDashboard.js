@@ -7,10 +7,13 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 
 function FocusDashboard() {
-  const { user } = useContext(AuthContext);
+  const { user, token } = useContext(AuthContext);    // token도 AuthContext에서 꺼내오거나,
+  // const token = localStorage.getItem('token');     // 이렇게 로컬스토리지에서 불러와도 됩니다.
+  
   const [value, setValue] = useState(new Date());
   const [focusData, setFocusData] = useState({});
-  const [todaySummary, setTodaySummary] = useState(null);
+  const [recentSummary, setRecentSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -19,56 +22,61 @@ function FocusDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('token');
-
-        const resAll = await axios.get('https://learningas.shop/focus/all-summary/', {
-          headers: { Authorization: `Token ${token}` }
-        });
-
-        const summaryData = {};
+        // 1) 전체 요약 리스트
+        const resAll = await axios.get(
+          'https://learningas.shop/focus/all-summary/',
+          { headers: { Authorization: `Token ${token}` } }
+        );
+        // 달력용 focusData 세팅
+        const summaryMap = {};
         resAll.data.forEach(item => {
-          summaryData[item.date] = item.focus_score;
+          summaryMap[item.date] = item.focus_score;
         });
-        setFocusData(summaryData);
+        setFocusData(summaryMap);
 
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
+        // 2) 가장 최신 날짜 추출
+        if (resAll.data.length > 0) {
+          const latestDate = resAll.data
+            .map(o => o.date)
+            .sort((a, b) => (a < b ? 1 : -1))[0];
 
-        const resToday = await axios.get(`https://learningas.shop/focus/summary/?date=${dateStr}`, {
-          headers: { Authorization: `Token ${token}` }
-        });
-        setTodaySummary(resToday.data);
+          // 3) 최신 날짜 요약 조회
+          const resToday = await axios.get(
+            `https://learningas.shop/focus/summary/?date=${latestDate}`,
+            { headers: { Authorization: `Token ${token}` } }
+          );
+          setRecentSummary({ ...resToday.data, date: latestDate });
+        }
       } catch (err) {
-        console.error("집중 점수 요약 불러오기 실패", err);
+        console.error('집중 점수 요약 불러오기 실패', err);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchData();
-  }, []);
 
-  const formatDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    fetchData();
+  }, [token]);
+
+  if (loading) return <p>불러오는 중...</p>;
+
+  // 달력 Tile에 점수 표시
+  const formatDate = date => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   };
 
   const tileContent = ({ date, view }) => {
     if (view === 'month') {
-      const dateStr = formatDate(date);
-      const score = focusData[dateStr];
-      if (score !== undefined && score > 0) {
-        return <div className="focus-score">{score}점</div>;
-      }
+      const score = focusData[formatDate(date)];
+      return score > 0 ? <div className="focus-score">{score}점</div> : null;
     }
     return null;
   };
 
-  const handleDateClick = (date) => {
-    const dateStr = formatDate(date);
-    navigate(`/focus/${dateStr}`);
+  const handleDateClick = date => {
+    navigate(`/focus/${formatDate(date)}`);
   };
 
   const handleStartStudy = () => {
@@ -79,14 +87,7 @@ function FocusDashboard() {
     <div className="dashboard-wrapper">
       <button className="hamburger-btn" onClick={toggleSidebar}>☰</button>
       <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="profile-section">
-          <img src={require('../assets/user_profile.png')} alt="User" className="profile-pic" />
-          <p>{user?.username || '사용자'}</p>
-        </div>
-        <div className="menu">유저설정</div>
-        <div className="menu">캘린더</div>
-        <div className="menu">예비1</div>
-        <div className="menu logout">로그아웃</div>
+        {/* ...사이드바 내용... */}
       </div>
 
       <div className="dashboard-layout">
@@ -94,25 +95,25 @@ function FocusDashboard() {
           <h2>{user?.username || '사용자'}님</h2>
           <div className="focus-info-box">
             <p><strong>최근 집중 정보</strong></p>
-            {todaySummary ? (
+            {recentSummary ? (
               <>
-                <p>점수: {todaySummary.focus_score}점</p>
-                <p>시간: {Math.floor(todaySummary.study_time_min)}분</p>
-                <p>날짜: {todaySummary.date}</p>
-                <p>눈 깜빡임: {todaySummary.blink_count}</p>
+                <p>점수: {recentSummary.focus_score}점</p>
+                <p>시간: {Math.floor(recentSummary.study_time_min)}분</p>
+                <p>날짜: {recentSummary.date}</p>
               </>
             ) : (
-              <p>불러오는 중...</p>
+              <p>데이터가 없습니다.</p>
             )}
           </div>
           <button className="study-btn" onClick={handleStartStudy}>
             공부 시작
           </button>
         </div>
+
         <div className="right-panel">
           <h3>📅 집중 캘린더</h3>
           <Calendar
-            onChange={(date) => {
+            onChange={date => {
               setValue(date);
               handleDateClick(date);
             }}
