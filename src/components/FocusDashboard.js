@@ -7,7 +7,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 
 function FocusDashboard() {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const [value, setValue] = useState(new Date());
   const [focusData, setFocusData] = useState({});
   const [todaySummary, setTodaySummary] = useState(null);
