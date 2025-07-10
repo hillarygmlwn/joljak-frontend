@@ -15,20 +15,45 @@ function BlinkZoneoutDetector() {
     const zoningOutTimeRef = useRef(0);
     const presentRef = useRef(false);
 
-    // 이 ref가 true가 되면 interval 등록을 건너뜁니다
+    // 이 ref가 true면 두 번째 등록을 막습니다
     const startedRef = useRef(false);
 
     useEffect(() => {
-        if (startedRef.current) return;    // 이미 등록했다면 아무것도 안 함
+        if (startedRef.current) return;
         startedRef.current = true;
 
         const interval = setInterval(() => {
-            // …payload 생성…
-            fetch("https://learningas.shop/focus/upload/", { … })
-                .then(/*…*/)
-                .catch(/*…*/);
+            const session_id = localStorage.getItem("session_id");
+            if (!session_id) return;
 
-            // 전송 후 ref / state 리셋
+            const now = new Date();
+            const isoTime = now.toISOString().slice(0, 19);
+
+            const payload = {
+                session: session_id,
+                blink_count: blinkCountRef.current,
+                eyes_closed_time: eyeClosedTimeRef.current,
+                zoning_out_time: zoningOutTimeRef.current,
+                present: presentRef.current,
+                heart_rate: 75,
+                time: isoTime
+            };
+
+            console.log("📤 전송할 데이터:", payload);
+
+            fetch("https://learningas.shop/focus/upload/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Token ${localStorage.getItem("token")}`,
+                },
+                body: JSON.stringify(payload),
+            })
+                .then((res) => res.json())
+                .then((data) => console.log("✅ 전송 완료:", data))
+                .catch((err) => console.error("❌ 전송 실패:", err));
+
+            // 전송 후 카운터 초기화
             blinkCountRef.current = 0;
             eyeClosedTimeRef.current = 0;
             zoningOutTimeRef.current = 0;
@@ -37,11 +62,8 @@ function BlinkZoneoutDetector() {
             setZoningOutTime(0);
         }, 10000);
 
-        return () => {
-            clearInterval(interval);
-            // StrictMode 언마운트(첫 번째 마운트 후)에는 플래그만 유지해서 다시 등록 안 됨
-        };
-    }, []);  // 빈 배열: 마운트/언마운트 사이클에만 반응
+        return () => clearInterval(interval);
+    }, []); // 빈 배열: 마운트/언마운트 시 한 번만 실행
 
     let blinkThreshold = 0.2;
     let blinkConsecFrames = 3;
