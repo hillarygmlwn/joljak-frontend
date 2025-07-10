@@ -43,9 +43,9 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
                 blink_count: blinkCountRef.current,
                 eyes_closed_time: eyesClosedSec,
                 zoning_out_time: zoneoutSec,
-                present,
+                present: presentRef.current,
                 heart_rate: 75,
-                time: new Date().toISOString().slice(0, 19),
+                time: isoTime, 
             };
 
             console.log("전송할 데이터:", payload);
