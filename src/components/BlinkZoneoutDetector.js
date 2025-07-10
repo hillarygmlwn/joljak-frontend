@@ -15,6 +15,34 @@ function BlinkZoneoutDetector() {
     const zoningOutTimeRef = useRef(0);
     const presentRef = useRef(false);
 
+    // 이 ref가 true가 되면 interval 등록을 건너뜁니다
+    const startedRef = useRef(false);
+
+    useEffect(() => {
+        if (startedRef.current) return;    // 이미 등록했다면 아무것도 안 함
+        startedRef.current = true;
+
+        const interval = setInterval(() => {
+            // …payload 생성…
+            fetch("https://learningas.shop/focus/upload/", { … })
+                .then(/*…*/)
+                .catch(/*…*/);
+
+            // 전송 후 ref / state 리셋
+            blinkCountRef.current = 0;
+            eyeClosedTimeRef.current = 0;
+            zoningOutTimeRef.current = 0;
+            setBlinkCount(0);
+            setEyeClosedTime(0);
+            setZoningOutTime(0);
+        }, 10000);
+
+        return () => {
+            clearInterval(interval);
+            // StrictMode 언마운트(첫 번째 마운트 후)에는 플래그만 유지해서 다시 등록 안 됨
+        };
+    }, []);  // 빈 배열: 마운트/언마운트 사이클에만 반응
+
     let blinkThreshold = 0.2;
     let blinkConsecFrames = 3;
     let eyeCloseCounter = 0;
