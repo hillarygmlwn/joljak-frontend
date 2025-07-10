@@ -18,19 +18,46 @@ function FocusDashboard() {
 
   useEffect(() => {
 
-    
+
 
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
 
-        const resAll = await axios.get('https://learningas.shop/focus/all-summary/', {
-          headers: { Authorization: `Token ${token}` }
-        });
-
+        // 1) 전체 요약 리스트 가져오기
+        const resAll = await axios.get(
+          'https://learningas.shop/focus/all-summary/',
+          { headers: { Authorization: `Token ${token}` } }
+        );
+        // 달력용 데이터 세팅
         const summaryData = {};
         resAll.data.forEach(item => {
           summaryData[item.date] = item.focus_score;
+        });
+        setFocusData(summaryData);
+
+        // 2) 키(날짜)만 뽑아서 최신 순 정렬 → 첫 번째(최신) 날짜 선택
+        const dates = Object.keys(focusMap);
+        if (dates.length === 0) {
+          setTodaySummary(null);
+          return;
+        }
+        // 문자열 비교로도 ISO 형식 YYYY-MM-DD 정렬이 가능
+        const latestDate = dates.sort((a, b) => b.localeCompare(a))[0];
+
+        // 3) 최신 날짜로 요약 조회
+        const resLatest = await axios.get(
+          `https://learningas.shop/focus/summary/?date=${latestDate}`,
+          { headers: { Authorization: `Token ${token}` } }
+        );
+        // state에 저장
+        setTodaySummary({ ...resLatest.data, date: latestDate });
+
+        
+
+        const focusMap = {};
+        resAll.data.forEach(item => {
+          focusMap[item.date] = item.focus_score;
         });
         setFocusData(summaryData);
 
@@ -102,7 +129,7 @@ function FocusDashboard() {
                 <p>점수: {todaySummary.focus_score}점</p>
                 <p>시간: {Math.floor(todaySummary.study_time_min)}분</p>
                 <p>날짜: {todaySummary.date}</p>
-                
+
               </>
             ) : (
               <p>불러오는 중...</p>
