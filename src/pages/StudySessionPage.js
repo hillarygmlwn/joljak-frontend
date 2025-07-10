@@ -2,15 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BlinkZoneoutDetector from '../components/BlinkZoneoutDetector';
-import HomeButton          from '../components/HomeButton';
+import HomeButton from '../components/HomeButton';
 import './StudySessionPage.css';
 
 function StudySessionPage() {
-  const [isRunning, setIsRunning]   = useState(false);
-  const [isResting, setIsResting]   = useState(false);
-  const [studyTime,  setStudyTime]  = useState(0);
-  const [restTime,   setRestTime]   = useState(0);
-  const [place,      setPlace]      = useState(localStorage.getItem('place') || '');
+  const [isRunning, setIsRunning] = useState(false);
+  const [isResting, setIsResting] = useState(false);
+  const [studyTime, setStudyTime] = useState(0);
+  const [restTime, setRestTime] = useState(0);
+  const [place, setPlace] = useState(localStorage.getItem('place') || '');
   const navigate = useNavigate();
 
   // 1초 단위 공부/휴식 시간 카운트
@@ -24,7 +24,7 @@ function StudySessionPage() {
     return () => clearInterval(timer);
   }, [isRunning, isResting]);
 
-  
+
 
   const handleStart = async () => {
     if (isRunning || !place) return;
@@ -41,6 +41,7 @@ function StudySessionPage() {
       if (!res.ok) throw new Error(data.error || '시작 실패');
       localStorage.setItem('session_id', data.session);
       setIsRunning(true);
+
     } catch (err) {
       console.error('공부 시작 오류:', err);
       alert(err.message);
@@ -74,13 +75,15 @@ function StudySessionPage() {
     return `${m}분 ${s}초`;
   };
 
+
+
   return (
     <div className="study-session-page">
       <HomeButton />
       <h1>
-        { !isRunning ? '준비 상태'
-          : isResting  ? '☕ 휴식 중'
-          :             '📚 공부 중'
+        {!isRunning ? '준비 상태'
+          : isResting ? '☕ 휴식 중'
+            : '📚 공부 중'
         }
       </h1>
       <p>누적 공부 시간: {formatTime(studyTime)}</p>
@@ -98,7 +101,10 @@ function StudySessionPage() {
           </>
         )}
 
-      <BlinkZoneoutDetector />
+      <BlinkZoneoutDetector
+        sessionId={localStorage.getItem('session_id')}
+        isRunning={isRunning}
+      />
 
       <video id="webcam" autoPlay playsInline muted width="640" height="480" />
     </div>
