@@ -18,8 +18,6 @@ function FocusDashboard() {
 
   useEffect(() => {
 
-
-
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -30,11 +28,11 @@ function FocusDashboard() {
           { headers: { Authorization: `Token ${token}` } }
         );
         // 달력용 데이터 세팅
-        const summaryData = {};
+        const focusMap = {};
         resAll.data.forEach(item => {
           summaryData[item.date] = item.focus_score;
         });
-        setFocusData(summaryData);
+        setFocusData(focusMap);
 
         // 2) 키(날짜)만 뽑아서 최신 순 정렬 → 첫 번째(최신) 날짜 선택
         const dates = Object.keys(focusMap);
@@ -52,14 +50,6 @@ function FocusDashboard() {
         );
         // state에 저장
         setTodaySummary({ ...resLatest.data, date: latestDate });
-
-        
-
-        const focusMap = {};
-        resAll.data.forEach(item => {
-          focusMap[item.date] = item.focus_score;
-        });
-        setFocusData(summaryData);
 
         const today = new Date();
         const year = today.getFullYear();
