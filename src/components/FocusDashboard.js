@@ -48,7 +48,7 @@ function FocusDashboard() {
           `https://learningas.shop/focus/summary/?date=${latestDate}`,
           { headers: { Authorization: `Token ${token}` } }
         );
-        // state에 저장
+        // 응답에 date 필드가 없으면 latestDate를 직접 붙여줍니다
         setTodaySummary({ ...resLatest.data, date: latestDate });
 
         const today = new Date();
