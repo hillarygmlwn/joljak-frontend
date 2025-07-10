@@ -197,4 +197,5 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
         );
     }
 
-    export default BlinkZoneoutDetector;
+}
+export default BlinkZoneoutDetector;
