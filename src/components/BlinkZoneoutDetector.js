@@ -41,8 +41,8 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
             const payload = {
                 session: sessionId,
                 blink_count: blinkCountRef.current,
-                eyes_closed_time: eyeClosedTimeRef.current,
-                zoning_out_time: zoningOutTimeRef.current,
+                eyes_closed_time: eyesClosedSec,
+                zoning_out_time: zoneoutSec,
                 present,
                 heart_rate: 75,
                 time: new Date().toISOString().slice(0, 19),
