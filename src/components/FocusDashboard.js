@@ -30,7 +30,7 @@ function FocusDashboard() {
         // 달력용 데이터 세팅
         const focusMap = {};
         resAll.data.forEach(item => {
-          summaryData[item.date] = item.focus_score;
+          focusMap[item.date] = item.focus_score;
         });
         setFocusData(focusMap);
 
