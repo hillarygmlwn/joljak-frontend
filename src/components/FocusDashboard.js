@@ -37,7 +37,7 @@ function FocusDashboard() {
         ☰
       </button>
 
-      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+      <div className={sidebarOpen ? 'sidebar open' : 'sidebar'}>
         <div className="profile-section">
           <img
             src={require('../assets/user_profile.png')}
