@@ -43,7 +43,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
                 blink_count: blinkCountRef.current,
                 eyes_closed_time: eyesClosedSec,
                 zoning_out_time: zoneoutSec,
-                present: presentRef.current,
+                present: present,
                 heart_rate: 75,
                 time: isoTime, 
             };
