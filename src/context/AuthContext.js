@@ -4,7 +4,6 @@ import axios from '../axios';
 export const AuthContext = createContext({
   user: null,
   token: null,
-  login: () => {},
   logout: () => {},   // 빈 함수라도 기본값에 선언
 });
 
@@ -28,7 +27,7 @@ export function AuthProvider({ children }) {
  
 
   return (
-    <AuthContext.Provider value={{  user, token, login, logout }}>
+    <AuthContext.Provider value={{  user, token, logout }}>
       {children}
     </AuthContext.Provider>
   );
