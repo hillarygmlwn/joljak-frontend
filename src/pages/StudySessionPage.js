@@ -24,31 +24,7 @@ function StudySessionPage() {
     return () => clearInterval(timer);
   }, [isRunning, isResting]);
 
-  // 10초마다 FocusData 업로드
-  useEffect(() => {
-    let uploadInterval;
-    if (isRunning) {
-      uploadInterval = setInterval(() => {
-        fetch('https://learningas.shop/focus/upload/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Token ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify({
-            time: new Date().toISOString(),
-            blink_count: 0,          // TODO: 실제 센서 연동
-            eyes_closed_time: 0.0,   // TODO: 실제 센서 연동
-            zoning_out_time: 0.0,    // TODO: 실제 센서 연동
-            present: !isResting,
-          }),
-        })
-        .then(res => { if (!res.ok) console.warn('업로드 실패:', res.statusText); })
-        .catch(err => console.error('업로드 에러:', err));
-      }, 10000);
-    }
-    return () => clearInterval(uploadInterval);
-  }, [isRunning, isResting]);
+  
 
   const handleStart = async () => {
     if (isRunning || !place) return;
