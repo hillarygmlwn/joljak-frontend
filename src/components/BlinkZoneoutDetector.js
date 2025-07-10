@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-function BlinkZoneoutDetector() {
+function BlinkZoneoutDetector({ sessionId, isRunning }) {
     const videoRef = useRef(null);
     const [blinkCount, setBlinkCount] = useState(0);
     const [eyeClosedTime, setEyeClosedTime] = useState(0);
@@ -19,6 +19,8 @@ function BlinkZoneoutDetector() {
     const startedRef = useRef(false);
 
     useEffect(() => {
+        // sessionId 와 isRunning 모두 true 이어야 interval 등록
+        if (!sessionId || !isRunning) return;
         if (startedRef.current) return;
         startedRef.current = true;
 
@@ -39,7 +41,7 @@ function BlinkZoneoutDetector() {
                 time: isoTime
             };
 
-            console.log("📤 전송할 데이터:", payload);
+            console.log("전송할 데이터:", payload);
 
             fetch("https://learningas.shop/focus/upload/", {
                 method: "POST",
@@ -50,8 +52,8 @@ function BlinkZoneoutDetector() {
                 body: JSON.stringify(payload),
             })
                 .then((res) => res.json())
-                .then((data) => console.log("✅ 전송 완료:", data))
-                .catch((err) => console.error("❌ 전송 실패:", err));
+                .then((data) => console.log("전송 완료:", data))
+                .catch((err) => console.error("전송 실패:", err));
 
             // 전송 후 카운터 초기화
             blinkCountRef.current = 0;
@@ -107,17 +109,13 @@ function BlinkZoneoutDetector() {
             });
         } else {
             if (eyeCloseCounter >= blinkConsecFrames) {
-                setBlinkCount((prev) => {
-                    blinkCountRef.current = prev + 1;
-                    return prev + 1;
-                });
 
                 const now = Date.now();
-                blinkHistoryRef.current.push(now);
                 const fiveMinAgo = now - 5 * 60 * 1000;
                 blinkHistoryRef.current = blinkHistoryRef.current.filter((t) => t > fiveMinAgo);
 
-                if (blinkHistoryRef.current.length < 3 && now - lastAlertTime > 5 * 60 * 1000) {
+                if (now - lastAlertTime > 10 * 1000   // ← 10초
+                    && blinkHistoryRef.current.length < 3) {
                     alert('최근 5분간 깜빡임이 너무 적습니다. 휴식을 권장합니다.');
                     setLastAlertTime(now);
                 }
@@ -129,6 +127,7 @@ function BlinkZoneoutDetector() {
         const irisR = keypoints[473];
         const eyeCenter = { x: (irisL.x + irisR.x) / 2, y: (irisL.y + irisR.y) / 2 };
         const faceCenter = keypoints[1];
+        const lastZoneoutAlertRef = useRef(Date.now());
 
         if (prevEyeCenter) {
             const move = distance(eyeCenter, prevEyeCenter);
@@ -143,105 +142,59 @@ function BlinkZoneoutDetector() {
         prevFaceCenter = faceCenter;
 
         if (eyeStillFrames > stillThreshold && faceStillFrames > stillThreshold) {
-            if (!zoneoutStarted) {
+            const now = Date.now();
+            const MIN_ALERT_INTERVAL = 10 * 1000; // 10초
+
+            // 첫 알람 또는 최소 10초 지난 경우에만
+            if (!zoneoutStarted && now - lastZoneoutAlertRef.current > MIN_ALERT_INTERVAL) {
                 zoneoutStarted = true;
-                alert('😵‍💫 멍 때리는 중인 것 같아요! 집중해볼까요?');
+                alert('멍 때리는 중인 것 같아요! 집중해볼까요?');
+                lastZoneoutAlertRef.current = now;  // 알람 시각 업데이트
             }
-            setZoningOutTime((prev) => {
+
+            setZoningOutTime(prev => {
                 zoningOutTimeRef.current = prev + 1;
                 return prev + 1;
             });
         } else {
             zoneoutStarted = false;
         }
-    };
+        useEffect(() => {
+            const videoElement = videoRef.current;
+            const faceMesh = new window.FaceMesh({
+                locateFile: (file) =>
+                    `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+            });
 
-    useEffect(() => {
-        const videoElement = videoRef.current;
-        const faceMesh = new window.FaceMesh({
-            locateFile: (file) =>
-                `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
-        });
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5,
+            });
 
-        faceMesh.setOptions({
-            maxNumFaces: 1,
-            refineLandmarks: true,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5,
-        });
+            faceMesh.onResults(onResults);
 
-        faceMesh.onResults(onResults);
-
-        const camera = new window.Camera(videoElement, {
-            onFrame: async () => {
-                await faceMesh.send({ image: videoElement });
-            },
-            width: 640,
-            height: 480,
-        });
-        camera.start();
-    }, []);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const session_id = localStorage.getItem("session_id");
-            if (!session_id) {
-                console.warn("⚠️ 세션 ID 없음: 먼저 /study-sessions/start/로 세션을 시작하세요.");
-                return;
-            }
-
-            const now = new Date();
-            const isoTime = now.toISOString().slice(0, 19); // "2025-06-27T10:49:15"
-
-            const payload = {
-                session: session_id,  // ✅ 반드시 유효한 세션 ID
-                blink_count: blinkCountRef.current,
-                eyes_closed_time: eyeClosedTimeRef.current,
-                zoning_out_time: zoningOutTimeRef.current,
-                present: presentRef.current,
-                heart_rate: 75,
-                time: isoTime  // ✅ ISO-8601 형식
-            };
-
-            console.log("📤 전송할 데이터:", payload);
-
-            fetch("https://learningas.shop/focus/upload/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Token ${localStorage.getItem("token")}`,
+            const camera = new window.Camera(videoElement, {
+                onFrame: async () => {
+                    await faceMesh.send({ image: videoElement });
                 },
-                body: JSON.stringify(payload),
-            })
-                .then((res) => res.json())
-                .then((data) => {
-                    console.log("✅ 전송 완료:", data);
-                })
-                .catch((err) => {
-                    console.error("❌ 전송 실패:", err);
-                });
+                width: 640,
+                height: 480,
+            });
+            camera.start();
+        }, []);
 
-            blinkCountRef.current = 0;
-            eyeClosedTimeRef.current = 0;
-            zoningOutTimeRef.current = 0;
+        const FPS = 30;
+        return (
+            <div>
+                <video ref={videoRef} style={{ width: 640, height: 480 }} autoPlay playsInline muted />
+                <p>눈 깜빡임 횟수: {blinkCount}</p>
+                <p>눈 감은 시간: {(eyeClosedTime / FPS).toFixed(1)}초</p>
+                <p>멍 때린 시간: {(zoningOutTime / FPS).toFixed(1)}초</p>
+                <p>얼굴 감지 상태: {present ? "O" : "X"}</p>
+            </div>
+        );
+    }
 
-            setBlinkCount(0);
-            setEyeClosedTime(0);
-            setZoningOutTime(0);
-        }, 10000);
-
-        return () => clearInterval(interval);
-    }, []);
-
-    return (
-        <div>
-            <video ref={videoRef} style={{ width: 640, height: 480 }} autoPlay playsInline muted />
-            <p>🔁 Blink Count: {blinkCount}</p>
-            <p>👁️ Eyes Closed Time: {eyeClosedTime} frames</p>
-            <p>😵 Zoning Out Time: {zoningOutTime} frames</p>
-            <p>🧍‍♀️ Present (Face Detected): {present ? "✅" : "❌"}</p>
-        </div>
-    );
-}
-
-export default BlinkZoneoutDetector;
+    export default BlinkZoneoutDetector;
