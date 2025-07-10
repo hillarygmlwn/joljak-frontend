@@ -13,6 +13,8 @@ function FocusDashboard() {
   const [todaySummary, setTodaySummary] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const [bestHours, setBestHours] = useState([]);
+  const [bestPlace, setBestPlace] = useState(null);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
@@ -21,7 +23,7 @@ function FocusDashboard() {
     // 1) 로컬스토리지 토큰 제거
     localStorage.removeItem('token');
     // 2) AuthContext의 logout 함수 호출 (필요하다면)
-    if (logout) logout();  
+    if (logout) logout();
     // 3) 로그인 페이지로 이동
     navigate('/login');
   };
@@ -61,7 +63,21 @@ function FocusDashboard() {
         // 응답에 date 필드가 없으면 latestDate를 직접 붙여줍니다
         setTodaySummary({ ...resLatest.data, date: latestDate });
 
-        
+        // → best hours 가져오기
+        const resHours = await axios.get(
+          'https://learningas.shop/focus/best-hours/',
+          { headers: { Authorization: `Token ${token}` } }
+        );
+        setBestHours(resHours.data.best_hours);
+
+        // → best place 가져오기
+        const resPlace = await axios.get(
+          'https://learningas.shop/focus/best-places/',
+          { headers: { Authorization: `Token ${token}` } }
+        );
+        setBestPlace(resPlace.data.best_place);
+
+
       } catch (err) {
         console.error("집중 점수 요약 불러오기 실패", err);
       }
@@ -109,7 +125,7 @@ function FocusDashboard() {
         <div className="menu">예비1</div>
         {/* 로그아웃 메뉴에 onClick 연결 */}
         <div className="menu logout" onClick={handleLogout}>
-        로그아웃
+          로그아웃
         </div>
       </div>
 
@@ -128,6 +144,29 @@ function FocusDashboard() {
             ) : (
               <p>불러오는 중...</p>
             )}
+
+            {bestHours.length > 0 && (
+              <div className="best-hours-box">
+                <p><strong>최적 집중 시간대</strong></p>
+                <ul>
+                  {bestHours.map((h, i) => (
+                    <li key={i}>
+                      {h.hour.slice(11, 16)} — 평균 {h.avg_score}점 ({h.count}회)
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {bestPlace && bestPlace.place && (
+              <div className="best-place-box">
+                <p><strong>최적 집중 장소</strong></p>
+                <p>
+                  {bestPlace.place} — 평균 {bestPlace.avg_score}점 ({bestPlace.count}회)
+                </p>
+              </div>
+            )}
+
           </div>
           <button className="study-btn" onClick={handleStartStudy}>
             공부 시작
