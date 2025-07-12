@@ -39,13 +39,20 @@ function FocusDashboard() {
           'https://learningas.shop/focus/all-summary/',
           { headers: { Authorization: `Token ${token}` } }
         );
-        // 달력용 데이터 세팅
+        // 2) 달력용 데이터 세팅: 날짜별로 summary endpoint 호출
         const focusMap = {};
-        resAll.data.forEach(item => {
-          // "2025-07-10T00:00:00Z" -> "2025-07-10"
-          const day = item.date.split('T')[0];
-          focusMap[day] = item.focus_score;
-        });
+        await Promise.all(
+          resAll.data.map(async (item) => {
+            // item.date: "2025-07-10T00:00:00Z" → "2025-07-10"
+            const day = item.date.split('T')[0];
+            // 하루 종합 요약 가져오기
+            const resDay = await axios.get(
+              `https://learningas.shop/focus/summary/?date=${day}`,
+              { headers: { Authorization: `Token ${token}` } }
+            );
+            focusMap[day] = resDay.data.focus_score;
+          })
+        );
         setFocusData(focusMap);
 
         // 2) 키(날짜)만 뽑아서 최신 순 정렬 → 첫 번째(최신) 날짜 선택
