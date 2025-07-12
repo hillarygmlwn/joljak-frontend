@@ -239,7 +239,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       const now = Date.now();
       // 마지막 알림으로부터도 5초 이상 지났으면
       if (now - lastLongCloseAlertRef.current > LONG_CLOSE_FRAMES * 1000) {
-        playAndAlert('눈을 5초 이상 감고 있어요! 깨어보세요.');
+        playAndAlert('눈을 오래 감고 있어요! 깨어보세요.');
         lastLongCloseAlertRef.current = now;
       }
     }
@@ -273,7 +273,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       // 5초 이상 지속될 때 알림
       const now = Date.now();
       if (now - lastZoneoutAlertRef.current > LONG_CLOSE_FRAMES * 1000) {
-        playAndAlert('멍때림이 5초 이상 지속되고 있어요! 집중하세요.');
+        playAndAlert('멍때림이 오래 지속되고 있어요! 집중하세요.');
         lastZoneoutAlertRef.current = now;
       }
     }
@@ -281,40 +281,40 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
 
   }
 
-    // ─── 5) 렌더링 ───────────────────────────────────
-    const FPS = 30;
+  // ─── 5) 렌더링 ───────────────────────────────────
+  const FPS = 30;
 
-    return (
-      <>
-        <div style={{ position: 'relative', width: 640, height: 480 }}>
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            width={640}
-            height={480}
-            style={{ position: 'absolute', top: 0, left: 0 }}
-          />
-          <canvas
-            ref={canvasRef}
-            width={640}
-            height={480}
-            style={{ position: 'absolute', top: 0, left: 0 }}
-          />
-          {/* ─── (2) audio 태그 삽입 ─── */}
-          <audio ref={audioRef} src={alertsound} preload="auto" />
+  return (
+    <>
+      <div style={{ position: 'relative', width: 640, height: 480 }}>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          width={640}
+          height={480}
+          style={{ position: 'absolute', top: 0, left: 0 }}
+        />
+        <canvas
+          ref={canvasRef}
+          width={640}
+          height={480}
+          style={{ position: 'absolute', top: 0, left: 0 }}
+        />
+        {/* ─── (2) audio 태그 삽입 ─── */}
+        <audio ref={audioRef} src={alertsound} preload="auto" />
 
-        </div>
+      </div>
 
-        <div style={{ marginTop: 10 }}>
-          <p>눈 깜빡임 횟수: {blinkCount}</p>
-          <p>눈 감은 시간: {(eyeClosedTime / FPS).toFixed(1)}초</p>
-          <p>멍 때린 시간: {(zoningOutTime / FPS).toFixed(1)}초</p>
-          <p>얼굴 감지 상태: {present ? 'O' : 'X'}</p>
-        </div>
-      </>
-    );
-  }
+      <div style={{ marginTop: 10 }}>
+        <p>눈 깜빡임 횟수: {blinkCount}</p>
+        <p>눈 감은 시간: {(eyeClosedTimeRef.current / FPS).toFixed(1)}초</p>
+        <p>멍 때린 시간: {(zoningOutTimeRef.current / FPS).toFixed(1)}초</p>
+        <p>얼굴 감지 상태: {present ? 'O' : 'X'}</p>
+      </div>
+    </>
+  );
+}
 
-  export default BlinkZoneoutDetector;  
+export default BlinkZoneoutDetector;  
