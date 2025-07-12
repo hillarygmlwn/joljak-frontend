@@ -27,7 +27,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
 
   // 눈 5초 이상 감음용 ref
   const lastLongCloseAlertRef = useRef(Date.now());
-  const LONG_CLOSE_FRAMES = 20 * 5; // 5초*FPS(30)
+  const LONG_CLOSE_FRAMES = 10 * 5; // 5초*FPS(30)
 
   // ─── playAndAlert 헬퍼 ─────────────────────────
   const playAndAlert = (message) => {
