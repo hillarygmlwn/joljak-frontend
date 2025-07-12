@@ -201,6 +201,10 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     const now = Date.now();
     blinkHistoryRef.current.push(now);
 
+    // 눈 5초 이상 감음용 ref
+    const lastLongCloseAlertRef = useRef(Date.now());
+    const LONG_CLOSE_FRAMES = 30 * 5; // 5초*FPS(30)
+
 
 
     // ▶ 깜빡임 로직
@@ -227,6 +231,17 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       }
       eyeCloseCounter = 0;
     }
+
+    // ─── 눈 5초 이상 감음 체크 ─────────────────────
+    if (eyeClosedTimeRef.current >= LONG_CLOSE_FRAMES) {
+      const now = Date.now();
+      // 마지막 알림으로부터도 5초 이상 지났으면
+      if (now - lastLongCloseAlertRef.current > LONG_CLOSE_FRAMES * 1000) {
+        playAndAlert('눈을 5초 이상 감고 있어요! 깨어보세요.');
+        lastLongCloseAlertRef.current = now;
+      }
+    }
+
 
     // ▶ 멍때림 로직
     const eyeCenter = midpoint(lm[468], lm[473]);
@@ -276,11 +291,11 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       </div>
 
       <div style={{ marginTop: 10 }}>
-        +        <p>눈 깜빡임 횟수: {blinkCount}</p>
-        +        <p>눈 감은 시간: {(eyeClosedTime / FPS).toFixed(1)}초</p>
-        +        <p>멍 때린 시간: {(zoningOutTime / FPS).toFixed(1)}초</p>
-        +        <p>얼굴 감지 상태: {present ? 'O' : 'X'}</p>
-        +      </div>
+        <p>눈 깜빡임 횟수: {blinkCount}</p>
+        <p>눈 감은 시간: {(eyeClosedTime / FPS).toFixed(1)}초</p>
+        <p>멍 때린 시간: {(zoningOutTime / FPS).toFixed(1)}초</p>
+        <p>얼굴 감지 상태: {present ? 'O' : 'X'}</p>
+      </div>
     </>
   );
 }
