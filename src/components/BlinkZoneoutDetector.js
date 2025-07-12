@@ -219,7 +219,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     // 상태 텍스트 찍기 (예: 블링크 수)
     ctx.font = '18px Arial';
     ctx.fillStyle = 'yellow';
-    ctx.fillText(`Blinks: ${blinkCount}`, 10, 25);
+    ctx.fillText(`Blinks: ${blinkCountRef.current}`, 10, 25);
     ctx.fillText(`EAR: ${ear.toFixed(2)}`, 10, 45);
 
 
@@ -290,7 +290,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       lastZoneoutAlertRef.current = Date.now();
     }
 
-    
+
   }
   // ─── 5) 렌더링 ───────────────────────────────────
   const FPS = 30;
