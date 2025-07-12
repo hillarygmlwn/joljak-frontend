@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
+import alertsound from './assets/alertsound.mp3';  // 알림음 파일 경로
 
 function BlinkZoneoutDetector({ sessionId, isRunning }) {
   // ─── 1) ref & state 선언 ─────────────────────────
   const videoRef = useRef(null);
+  const audioRef = useRef(null);
 
   const [blinkCount, setBlinkCount]       = useState(0);
   const [eyeClosedTime, setEyeClosedTime] = useState(0);
@@ -21,6 +23,18 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
   const presenceFramesRef    = useRef(0);
 
   const startedRef = useRef(false);
+
+  // ─── playAndAlert 헬퍼 ─────────────────────────
+  const playAndAlert = (message) => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = 0;
+    audioRef.current.play().catch(() => {
+      console.warn('-- 자동 재생 차단됨 --');
+    });
+    setTimeout(() => {
+      alert(message);
+    }, 50);  // 50ms 딜레이
+  };
 
   // ─── 2) 10초마다 서버 업로드 ─────────────────────
   useEffect(() => {
@@ -142,7 +156,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
           now - lastBlinkAlertRef.current > 10 * 1000 &&
           blinkHistoryRef.current.filter(t => t > now - 5*60*1000).length < 3
         ) {
-          alert('최근 5분간 깜빡임이 너무 적습니다. 휴식을 권장합니다.');
+          playAndAlert('최근 5분간 깜빡임이 너무 적습니다. 휴식을 권장합니다.');
           lastBlinkAlertRef.current = now;
         }
       }
@@ -161,7 +175,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
 
     if (eyeStillFrames > stillThreshold && faceStillFrames > stillThreshold) {
       if (now - lastZoneoutAlertRef.current > 10 * 1000) {
-        alert('멍 때리는 중인 것 같아요! 집중해볼까요?');
+        playAndAlert('멍 때리는 중인 것 같아요! 집중해볼까요?');
         lastZoneoutAlertRef.current = now;
       }
       setZoningOutTime(prev => {
@@ -183,6 +197,9 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
         width={640}
         height={480}
       />
+      {/* ─── (2) audio 태그 삽입 ─── */}
+      <audio ref={audioRef} src={alertsound} preload="auto" />
+      
       <p>눈 깜빡임 횟수: {blinkCount}</p>
       <p>눈 감은 시간: {(eyeClosedTime / FPS).toFixed(1)}초</p>
       <p>멍 때린 시간: {(zoningOutTime / FPS).toFixed(1)}초</p>
