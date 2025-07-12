@@ -315,5 +315,5 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       </>
     );
   }
-
+}
   export default BlinkZoneoutDetector;  
