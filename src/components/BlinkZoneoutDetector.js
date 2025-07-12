@@ -39,6 +39,12 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
   const lastLongCloseAlertRef = useRef(Date.now());
   const LONG_CLOSE_FRAMES = 10 * 5; // 5초*FPS(30)
 
+  // 3) 실제 경과 시간 계산
+  const zoningSeconds = zoneoutStartRef.current
+    ? (Date.now() - zoneoutStartRef.current) / 1000
+    : 0;
+
+
   // ─── playAndAlert 헬퍼 ─────────────────────────
   const playAndAlert = (message) => {
     if (!audioRef.current) return;
@@ -99,6 +105,9 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
 
   // ─── 3) Mediapipe FaceMesh 초기화 ────────────────
   useEffect(() => {
+
+    if (!videoRef.current) return;
+
     const faceMesh = new window.FaceMesh({
       locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
     });
@@ -116,7 +125,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       height: 480,
     });
     camera.start();
-  }, []);
+  }, [videoRef.current]);
 
   // ─── 4) onResults (프레임별 처리) ─────────────────
   let eyeCloseCounter = 0;
@@ -268,10 +277,6 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       zoneoutStartRef.current = null;
     }
 
-    // 3) 실제 경과 시간 계산
-    const zoningSeconds = zoneoutStartRef.current
-      ? (Date.now() - zoneoutStartRef.current) / 1000
-      : 0;
 
     // 4) 화면용 state 업데이트 (선택 사항)
     setZoningOutTime(zoningSeconds);
@@ -282,40 +287,40 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       lastZoneoutAlertRef.current = Date.now();
     }
   }
-    // ─── 5) 렌더링 ───────────────────────────────────
-    const FPS = 30;
+  // ─── 5) 렌더링 ───────────────────────────────────
+  const FPS = 30;
 
-    return (
-      <>
-        <div style={{ position: 'relative', width: 640, height: 480 }}>
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            width={640}
-            height={480}
-            style={{ position: 'absolute', top: 0, left: 0 }}
-          />
-          <canvas
-            ref={canvasRef}
-            width={640}
-            height={480}
-            style={{ position: 'absolute', top: 0, left: 0 }}
-          />
-          {/* ─── (2) audio 태그 삽입 ─── */}
-          <audio ref={audioRef} src={alertsound} preload="auto" />
+  return (
+    <>
+      <div style={{ position: 'relative', width: 640, height: 480 }}>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          width={640}
+          height={480}
+          style={{ position: 'absolute', top: 0, left: 0 }}
+        />
+        <canvas
+          ref={canvasRef}
+          width={640}
+          height={480}
+          style={{ position: 'absolute', top: 0, left: 0 }}
+        />
+        {/* ─── (2) audio 태그 삽입 ─── */}
+        <audio ref={audioRef} src={alertsound} preload="auto" />
 
-        </div>
+      </div>
 
-        <div style={{ marginTop: 10 }}>
-          <p>눈 깜빡임 횟수: {blinkCount}</p>
-          <p>눈 감은 시간: {(eyeClosedTimeRef.current / FPS).toFixed(1)}초</p>
-          <p>멍 때린 시간: {zoningSeconds.toFixed(1)}초</p>
-          <p>얼굴 감지 상태: {present ? 'O' : 'X'}</p>
-        </div>
-      </>
-    );
-  }
+      <div style={{ marginTop: 10 }}>
+        <p>눈 깜빡임 횟수: {blinkCount}</p>
+        <p>눈 감은 시간: {(eyeClosedTimeRef.current / FPS).toFixed(1)}초</p>
+        <p>멍 때린 시간: {zoningSeconds.toFixed(1)}초</p>
+        <p>얼굴 감지 상태: {present ? 'O' : 'X'}</p>
+      </div>
+    </>
+  );
+}
 
 export default BlinkZoneoutDetector;  
