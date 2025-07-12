@@ -145,7 +145,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     const rightEyePts = [33, 160, 158, 133, 153, 144].map(i => lm[i]);
     const ear = (calcEAR(leftEyePts) + calcEAR(rightEyePts)) / 2;
 
-  
+
 
     // 4) 얼굴 바운딩 박스 계산
     const xs = lm.map(p => p.x * width);
@@ -196,13 +196,13 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
 
     const leftEye = [362, 385, 387, 263, 373, 380].map(i => lm[i]);
     const rightEye = [33, 160, 158, 133, 153, 144].map(i => lm[i]);
-    
+
 
     const now = Date.now();
     blinkHistoryRef.current.push(now);
-    
 
-    
+
+
     // ▶ 깜빡임 로직
     if (ear < blinkThreshold) {
       eyeCloseCounter++;
@@ -214,7 +214,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       if (eyeCloseCounter >= blinkConsecFrames) {
         blinkCountRef.current++;
         setBlinkCount(c => c + 1);
-        
+
 
         // 10초 간격으로만 알림
         if (
@@ -253,30 +253,35 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
   // ─── 5) 렌더링 ───────────────────────────────────
   const FPS = 30;
   return (
-    <div style={{ position: 'relative', width: 640, height: 480 }}>
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        width={640}
-        height={480}
-        style={{ position: 'absolute', top: 0, left: 0 }}
-      />
-      <canvas
-        ref={canvasRef}
-        width={640}
-        height={480}
-        style={{ position: 'absolute', top: 0, left: 0 }}
-      />
-      {/* ─── (2) audio 태그 삽입 ─── */}
-      <audio ref={audioRef} src={alertsound} preload="auto" />
+    <>
+      <div style={{ position: 'relative', width: 640, height: 480 }}>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          width={640}
+          height={480}
+          style={{ position: 'absolute', top: 0, left: 0 }}
+        />
+        <canvas
+          ref={canvasRef}
+          width={640}
+          height={480}
+          style={{ position: 'absolute', top: 0, left: 0 }}
+        />
+        {/* ─── (2) audio 태그 삽입 ─── */}
+        <audio ref={audioRef} src={alertsound} preload="auto" />
 
-      <p>눈 깜빡임 횟수: {blinkCount}</p>
-      <p>눈 감은 시간: {(eyeClosedTime / FPS).toFixed(1)}초</p>
-      <p>멍 때린 시간: {(zoningOutTime / FPS).toFixed(1)}초</p>
-      <p>얼굴 감지 상태: {present ? 'O' : 'X'}</p>
-    </div>
+      </div>
+
+      <div style={{ marginTop: 10 }}>
+        +        <p>눈 깜빡임 횟수: {blinkCount}</p>
+        +        <p>눈 감은 시간: {(eyeClosedTime / FPS).toFixed(1)}초</p>
+        +        <p>멍 때린 시간: {(zoningOutTime / FPS).toFixed(1)}초</p>
+        +        <p>얼굴 감지 상태: {present ? 'O' : 'X'}</p>
+        +      </div>
+    </>
   );
 }
 
