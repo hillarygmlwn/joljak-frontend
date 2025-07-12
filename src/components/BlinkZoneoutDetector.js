@@ -6,6 +6,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
   const videoRef = useRef(null);
   const audioRef = useRef(null);
   const canvasRef = useRef(null);
+  const zoneoutStartRef = useRef(null);
 
   // ▶ 눈 감김 카운터를 useRef 로 선언
   const eyeCloseCounterRef = useRef(0);
@@ -249,72 +250,70 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     const eyeCenter = midpoint(lm[468], lm[473]);
     const faceCenter = lm[1];
 
-    if (prevEyeCenterRef.current) {
-      eyeStillFramesRef.current = distance(eyeCenter, prevEyeCenterRef.current) < 0.002
-        ? eyeStillFramesRef.current + 1
-        : 0;
-      faceStillFramesRef.current = distance(faceCenter, prevFaceCenterRef.current) < 0.002
-        ? faceStillFramesRef.current + 1
-        : 0;
-    }
+    // 1) 움직임 멈춤 감지
+    const isEyeStill = prevEyeCenterRef.current && distance(eyeCenter, prevEyeCenterRef.current) < 0.002;
+    const isFaceStill = prevFaceCenterRef.current && distance(faceCenter, prevFaceCenterRef.current) < 0.002;
 
     prevEyeCenterRef.current = eyeCenter;
     prevFaceCenterRef.current = faceCenter;
 
-    // 5초(=LONG_CLOSE_FRAMES 프레임) 이상 멍때림 체크
-    if (
-      eyeStillFramesRef.current >= LONG_CLOSE_FRAMES &&
-      faceStillFramesRef.current >= LONG_CLOSE_FRAMES
-    ) {
-      // 멍시간 누적
-      zoningOutTimeRef.current += 1;
-      setZoningOutTime(zoningOutTimeRef.current);
-
-      // 5초 이상 지속될 때 알림
-      const now = Date.now();
-      if (now - lastZoneoutAlertRef.current > LONG_CLOSE_FRAMES * 1000) {
-        playAndAlert('멍때림이 오래 지속되고 있어요! 집중하세요.');
-        lastZoneoutAlertRef.current = now;
+    // 2) 멍때림 시작 시점 기록
+    if (isEyeStill && isFaceStill) {
+      if (zoneoutStartRef.current === null) {
+        zoneoutStartRef.current = Date.now();
       }
+    } else {
+      zoneoutStartRef.current = null;
     }
 
+    // 3) 실제 경과 시간 계산
+    const zoningSeconds = zoneoutStartRef.current
+      ? (Date.now() - zoneoutStartRef.current) / 1000
+      : 0;
 
+    // 4) 화면용 state 업데이트 (선택 사항)
+    setZoningOutTime(zoningSeconds);
+
+    // 5) 5초 경과 시 알림
+    if (zoningSeconds >= 5 && Date.now() - lastZoneoutAlertRef.current > 5000) {
+      playAndAlert('멍때림이 5초 이상 지속되고 있어요! 집중하세요.');
+      lastZoneoutAlertRef.current = Date.now();
+    }
+
+    // ─── 5) 렌더링 ───────────────────────────────────
+    const FPS = 30;
+
+    return (
+      <>
+        <div style={{ position: 'relative', width: 640, height: 480 }}>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            width={640}
+            height={480}
+            style={{ position: 'absolute', top: 0, left: 0 }}
+          />
+          <canvas
+            ref={canvasRef}
+            width={640}
+            height={480}
+            style={{ position: 'absolute', top: 0, left: 0 }}
+          />
+          {/* ─── (2) audio 태그 삽입 ─── */}
+          <audio ref={audioRef} src={alertsound} preload="auto" />
+
+        </div>
+
+        <div style={{ marginTop: 10 }}>
+          <p>눈 깜빡임 횟수: {blinkCount}</p>
+          <p>눈 감은 시간: {(eyeClosedTimeRef.current / FPS).toFixed(1)}초</p>
+          <p>멍 때린 시간: {zoningSeconds.toFixed(1)}초</p>
+          <p>얼굴 감지 상태: {present ? 'O' : 'X'}</p>
+        </div>
+      </>
+    );
   }
 
-  // ─── 5) 렌더링 ───────────────────────────────────
-  const FPS = 30;
-
-  return (
-    <>
-      <div style={{ position: 'relative', width: 640, height: 480 }}>
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted
-          width={640}
-          height={480}
-          style={{ position: 'absolute', top: 0, left: 0 }}
-        />
-        <canvas
-          ref={canvasRef}
-          width={640}
-          height={480}
-          style={{ position: 'absolute', top: 0, left: 0 }}
-        />
-        {/* ─── (2) audio 태그 삽입 ─── */}
-        <audio ref={audioRef} src={alertsound} preload="auto" />
-
-      </div>
-
-      <div style={{ marginTop: 10 }}>
-        <p>눈 깜빡임 횟수: {blinkCount}</p>
-        <p>눈 감은 시간: {(eyeClosedTimeRef.current / FPS).toFixed(1)}초</p>
-        <p>멍 때린 시간: {(zoningOutTimeRef.current / FPS).toFixed(1)}초</p>
-        <p>얼굴 감지 상태: {present ? 'O' : 'X'}</p>
-      </div>
-    </>
-  );
-}
-
-export default BlinkZoneoutDetector;  
+  export default BlinkZoneoutDetector;  
