@@ -39,8 +39,8 @@ function StartPage() {
         style={{
           position: 'absolute',
           left: '50%',
-          top: 'calc(50%)',
-          transform: 'translate(-50%, 0)',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
           textAlign: 'center',
           color: 'white',
           fontSize: 28,

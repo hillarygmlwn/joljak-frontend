@@ -21,6 +21,7 @@ const FocusDetailPage = () => {
   const [timelineData, setTimelineData] = useState(null);
   const [blinkData, setBlinkData] = useState(null);
   const [focusScoreData, setFocusScoreData] = useState(null);
+  const [focusDurations, setFocusDurations] = useState(null);
 
   // 1) 하루 요약
   useEffect(() => {
