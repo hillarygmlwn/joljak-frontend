@@ -234,15 +234,24 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
 
 
 
-    // ▶ 깜빡임 로직
     // ▶ 깜빡임 로직 (useRef 기반)
     const ec = eyeCloseCounterRef.current;
     if (ear < blinkThreshold) {
       eyeCloseCounterRef.current = ec + 1;
+      // 눈 감은 프레임 누적
       setEyeClosedTime(prev => {
         eyeClosedTimeRef.current = prev + 1;
         return prev + 1;
       });
+
+      // 5초(=150프레임) 이상 눈 감고 있으면 바로 알림
+      if (
+        eyeCloseCounterRef.current >= LONG_CLOSE_FRAMES &&
+        Date.now() - lastLongCloseAlertRef.current > 5000
+      ) {
+        playAndAlert('눈을 5초 이상 감고 있어요! 깨어보세요.');
+        lastLongCloseAlertRef.current = Date.now();
+      }
     } else {
       if (ec >= blinkConsecFrames) {
         blinkCountRef.current++;
@@ -250,30 +259,18 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       }
       eyeCloseCounterRef.current = 0;
     }
-    // ─── 눈 5초 이상 감음 체크 ─────────────────────
-    if (eyeClosedTimeRef.current >= LONG_CLOSE_FRAMES) {
-      const now = Date.now();
-      // 마지막 알림으로부터도 5초 이상 지났으면
-      if (now - lastLongCloseAlertRef.current > LONG_CLOSE_FRAMES * 1000) {
-        playAndAlert('눈을 오래 감고 있어요! 깨어보세요.');
-        lastLongCloseAlertRef.current = now;
-      }
-    }
 
 
-    // ▶ 멍때림(정지) 로직 (useRef 기반, 5초 이상 알림)
+    // ▶ 멍때림(정지) 로직
     const eyeCenter = midpoint(lm[468], lm[473]);
     const faceCenter = lm[1];
-
-    // 1) 움직임 멈춤 감지
     const isEyeStill = prevEyeCenterRef.current && distance(eyeCenter, prevEyeCenterRef.current) < 0.002;
     const isFaceStill = prevFaceCenterRef.current && distance(faceCenter, prevFaceCenterRef.current) < 0.002;
-
     prevEyeCenterRef.current = eyeCenter;
     prevFaceCenterRef.current = faceCenter;
 
-    // 2) 멍때림 시작 시점 기록
     if (isEyeStill && isFaceStill) {
+      // 멍때림 시작 기록
       if (zoneoutStartRef.current === null) {
         zoneoutStartRef.current = Date.now();
       }
@@ -281,15 +278,19 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       zoneoutStartRef.current = null;
     }
 
-
-    // 4) 화면용 state 업데이트 (선택 사항)
+    const zoningSeconds = zoneoutStartRef.current ? (Date.now() - zoneoutStartRef.current) / 1000 : 0;
     setZoningOutTime(zoningSeconds);
 
-    // 5) 5초 경과 시 알림
-    if (zoningSeconds >= 5 && Date.now() - lastZoneoutAlertRef.current > 5000) {
+    // 5초 이상 멍때림 시 바로 알림
+    if (
+      zoningSeconds >= 5 &&
+      Date.now() - lastZoneoutAlertRef.current > 5000
+    ) {
       playAndAlert('멍때림이 5초 이상 지속되고 있어요! 집중하세요.');
       lastZoneoutAlertRef.current = Date.now();
     }
+
+    
   }
   // ─── 5) 렌더링 ───────────────────────────────────
   const FPS = 30;
