@@ -15,6 +15,9 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+const [sensorData, setSensorData] = useState(null);
+
+
 const FocusDetailPage = () => {
   const { date } = useParams();
   const [summary, setSummary] = useState(null);
@@ -82,7 +85,19 @@ const FocusDetailPage = () => {
       .catch(err => console.error('blink summary 실패', err));
   }, [date]);
 
-  // 4) 10초 단위 집중도 (focus_score)
+  // 4) 하루치 심박 & 압력 타임라인
+  useEffect(() => {
+    axios
+      .get(`/focus/sensor-timeline/?date=${date}`, {
+        headers: { Authorization: `Token ${localStorage.getItem('token')}` }
+      })
+      .then(res => {
+        setSensorData(res.data.timeline);
+      })
+      .catch(err => console.error('sensor timeline 실패', err));
+  }, [date]);
+
+  // 5) 10초 단위 집중도 (focus_score)
   useEffect(() => {
     axios.get(`/focus/timeline-detail/?date=${date}`)
       .then(res => {
@@ -137,6 +152,40 @@ const FocusDetailPage = () => {
         </div>
       )}
 
+      {sensorData && sensorData.length > 0 && (
+        <div>
+          <h3>시간대별 심박수 & 압력</h3>
+          <Bar
+            data={{
+              labels: sensorData.map(d => d.time),
+              datasets: [
+                {
+                  label: '심박수 (bpm)',
+                  data: sensorData.map(d => d.heart_rate),
+                  backgroundColor: 'rgba(255,99,132,0.6)'
+                },
+                {
+                  label: '필기 압력',
+                  data: sensorData.map(d => d.pressure),
+                  backgroundColor: 'rgba(54,162,235,0.6)'
+                }
+              ]
+            }}
+            options={{
+              scales: {
+                x: {
+                  title: { display: true, text: 'Time' },
+                  ticks: { maxRotation: 90, minRotation: 45 }
+                },
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }}
+          />
+        </div>
+      )}
+
       {focusScoreData && focusScoreData.labels.length > 0 ? (
         <div>
           <h3>10초 단위 집중도</h3>
@@ -145,6 +194,9 @@ const FocusDetailPage = () => {
       ) : (
         <p>10초 집중도 데이터 없음</p>
       )}
+
+
+
     </div>
   );
 };
