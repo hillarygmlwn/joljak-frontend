@@ -37,7 +37,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
 
   // 눈 5초 이상 감음용 ref
   const lastLongCloseAlertRef = useRef(Date.now());
-  const LONG_CLOSE_FRAMES = 10 * 5; // 5초*FPS(30)
+  const LONG_CLOSE_FRAMES = 30 * 5; // 5초*FPS(30)
 
   // 3) 실제 경과 시간 계산
   const zoningSeconds = zoneoutStartRef.current
@@ -49,13 +49,17 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
   const playAndAlert = (message) => {
     if (!audioRef.current) return;
     audioRef.current.currentTime = 0;
+    // 1) 소리를 먼저 재생
     audioRef.current.play().catch(() => {
       console.warn('-- 자동 재생 차단됨 --');
     });
+    // 2) sound가 재생되는 동안 alert은 지연
+    //    (예: 500ms 뒤에 alert 띄우기)
     setTimeout(() => {
       alert(message);
-    }, 50);  // 50ms 딜레이
+    }, 500);
   };
+
 
   // ─── 2) 10초마다 서버 업로드 ─────────────────────
   useEffect(() => {
