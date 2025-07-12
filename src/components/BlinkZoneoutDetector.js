@@ -25,6 +25,10 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
 
   const startedRef = useRef(false);
 
+  // 눈 5초 이상 감음용 ref
+  const lastLongCloseAlertRef = useRef(Date.now());
+  const LONG_CLOSE_FRAMES = 30 * 5; // 5초*FPS(30)
+
   // ─── playAndAlert 헬퍼 ─────────────────────────
   const playAndAlert = (message) => {
     if (!audioRef.current) return;
@@ -201,9 +205,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     const now = Date.now();
     blinkHistoryRef.current.push(now);
 
-    // 눈 5초 이상 감음용 ref
-    const lastLongCloseAlertRef = useRef(Date.now());
-    const LONG_CLOSE_FRAMES = 30 * 5; // 5초*FPS(30)
+
 
 
 
