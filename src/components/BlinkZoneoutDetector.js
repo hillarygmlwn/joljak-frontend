@@ -53,6 +53,8 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
 
   // ─── 2) 10초마다 서버 업로드 ─────────────────────
   useEffect(() => {
+    if (typeof window === 'undefined') return;  // SSR 차단
+    if (!videoRef.current) return;             // videoRef 확인
     if (!sessionId || !isRunning) return;
     if (startedRef.current) return;
     startedRef.current = true;
@@ -316,4 +318,4 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     );
   }
 }
-  export default BlinkZoneoutDetector;  
+export default BlinkZoneoutDetector;  
