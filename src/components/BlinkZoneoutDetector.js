@@ -279,6 +279,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     }
 
 
+  }
 
     // ─── 5) 렌더링 ───────────────────────────────────
     const FPS = 30;
@@ -315,5 +316,5 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       </>
     );
   }
-}
+
   export default BlinkZoneoutDetector;  
