@@ -281,7 +281,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       playAndAlert('멍때림이 5초 이상 지속되고 있어요! 집중하세요.');
       lastZoneoutAlertRef.current = Date.now();
     }
-
+  }
     // ─── 5) 렌더링 ───────────────────────────────────
     const FPS = 30;
 
@@ -317,5 +317,5 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       </>
     );
   }
-}
+
 export default BlinkZoneoutDetector;  
