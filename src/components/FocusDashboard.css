@@ -2,6 +2,16 @@
   position: relative;
 }
 
+.dashboard-layout {
+  display: flex;
+  justify-content: center;  /* 좌우 중앙 정렬 추가 */
+  align-items: flex-start;  /* 세로축 정렬 (원하시면 center 로 변경) */
+  padding: 40px;
+  gap: 40px;
+}
+
+
+
 .hamburger-btn {
   position: absolute;
   top: 20px;
@@ -89,8 +99,9 @@
   background-color: #e0e0e0;
 }
 
+.left-panel .focus-info-box,
 .right-panel {
-  flex: 2;
+  text-align: center;
 }
 
 .focus-score {
