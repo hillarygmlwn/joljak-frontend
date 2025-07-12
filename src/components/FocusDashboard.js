@@ -11,7 +11,7 @@ function FocusDashboard() {
   const [value, setValue] = useState(new Date());
   const [focusData, setFocusData] = useState({});
   const [todaySummary, setTodaySummary] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const [bestHours, setBestHours] = useState([]);
   const [bestPlace, setBestPlace] = useState(null);
