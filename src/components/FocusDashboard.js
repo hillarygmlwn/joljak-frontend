@@ -173,7 +173,7 @@ function FocusDashboard() {
           </button>
         </div>
         <div className="right-panel">
-          <h3>📅 집중 캘린더</h3>
+          <h3>집중 캘린더</h3>
           <Calendar
             onChange={(date) => {
               setValue(date);

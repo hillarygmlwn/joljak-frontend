@@ -83,37 +83,66 @@ const FocusDetailPage = () => {
     return `${m}분 ${s}초`;
   };
 
+  // helper: n개의 바에 HSL 색상을 골고루 분배
+  const makeColors = (n) => Array.from({ length: n }, (_, i) =>
+    `hsl(${Math.round((i * 360) / n)}, 70%, 50%)`
+  );
+
   if (!summary) return <p>데이터 로딩 중...</p>;
 
   return (
     <div style={{ padding: 20 }}>
       <h2>{date} 집중도 요약</h2>
-      <p>💯 점수: {summary.focus_score}</p>
-      <p>👁️ 깜빡임: {summary.blink_count}회</p>
-      <p>😶 멍 때림: {formatTime(summary.zoneout_time_sec)}</p>
-      <p>✅ 자리 이탈 비율: {summary.present_ratio * 100}%</p>
+      <p>점수: {summary.focus_score}</p>
+      <p>깜빡임: {summary.blink_count}회</p>
+      <p>멍 때림: {formatTime(summary.zoneout_time_sec)}</p>
+      <p>자리 이탈 비율: {summary.present_ratio * 100}%</p>
 
       {timelineData && (
         <div>
           <h3>시간대별 활동</h3>
-          <Bar data={timelineData} />
+          <Bar
+            data={{
+              ...timelineData,
+              datasets: timelineData.datasets.map(ds => ({
+                ...ds,
+                backgroundColor: makeColors(ds.data.length)
+              }))
+            }}
+          />
         </div>
       )}
 
       {blinkData && (
         <div>
           <h3>60초 단위 깜빡임</h3>
-          <Bar data={blinkData} />
+          <Bar
+            data={{
+              ...blinkData,
+              datasets: blinkData.datasets.map(ds => ({
+                ...ds,
+                backgroundColor: makeColors(ds.data.length)
+              }))
+            }}
+          />
         </div>
       )}
 
       {focusScoreData && focusScoreData.labels.length > 0 ? (
         <div>
           <h3>10초 단위 집중도</h3>
-          <Bar data={focusScoreData} />
+          <Bar
+            data={{
+              ...focusScoreData,
+              datasets: focusScoreData.datasets.map(ds => ({
+                ...ds,
+                backgroundColor: makeColors(ds.data.length)
+              }))
+            }}
+          />
         </div>
       ) : (
-        <p>⚠️ 10초 집중도 데이터 없음</p>
+        <p>10초 집중도 데이터 없음</p>
       )}
     </div>
   );
