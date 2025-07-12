@@ -11,6 +11,7 @@ function FocusDashboard() {
   const [value, setValue] = useState(new Date());
   const [focusData, setFocusData] = useState({});
   const [todaySummary, setTodaySummary] = useState(null);
+  const [todayDurations, setTodayDurations] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const [bestHours, setBestHours] = useState([]);
@@ -71,6 +72,17 @@ function FocusDashboard() {
         );
         // 응답에 date 필드가 없으면 latestDate를 직접 붙여줍니다
         setTodaySummary({ ...resLatest.data, date: latestDate });
+
+        // 3.5) 오늘의 집중 유지 시간 가져오기
+        try {
+          const resDur = await axios.get(
+            `https://learningas.shop/focus/focus-durations/?threshold=60`,
+            { headers: { Authorization: `Token ${token}` } }
+          );
+          setTodayDurations(resDur.data);
+        } catch (e) {
+          console.error('오늘 집중 유지 시간 불러오기 실패', e);
+        }
 
         // → best hours 가져오기
         const resHours = await axios.get(
@@ -145,6 +157,12 @@ function FocusDashboard() {
               <>
                 <p>점수: {todaySummary.focus_score}점</p>
                 <p>시간: {Math.floor(todaySummary.study_time_min)}분</p>
+                {todayDurations && (
+                  <p>
+                    집중 유지: 평균 {todayDurations.average_focused_min}분<br />
+                    (최대 {todayDurations.max_focused_min}분, 최소 {todayDurations.min_focused_min}분)
+                  </p>
+                )}
                 <p>날짜: {todaySummary.date}</p>
 
               </>

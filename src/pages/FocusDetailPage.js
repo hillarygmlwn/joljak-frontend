@@ -30,6 +30,14 @@ const FocusDetailPage = () => {
       .catch((err) => console.error('요약 불러오기 실패', err));
   }, [date]);
 
+  // 1.5) 집중 유지 시간 가져오기
+  useEffect(() => {
+    axios
+      .get(`/focus/focus-durations/?threshold=60`)  // 필요하면 threshold 파라미터 조정
+      .then(res => setFocusDurations(res.data))
+      .catch(err => console.error('집중 유지 시간 불러오기 실패', err));
+  }, []);
+
   // 2) 자리 이탈·멍
   useEffect(() => {
     axios.get(`/focus/timeline/?date=${date}`)
@@ -104,6 +112,12 @@ const FocusDetailPage = () => {
     <div style={{ padding: 20 }}>
       <h2>{date} 집중도 요약</h2>
       <p>점수: {summary.focus_score}</p>
+      {focusDurations && (
+        <p>
+          집중 유지: 평균 {focusDurations.average_focused_min}분
+          (최대 {focusDurations.max_focused_min}분, 최소 {focusDurations.min_focused_min}분)
+        </p>
+      )}
       <p>깜빡임: {summary.blink_count}회</p>
       <p>멍 때림: {formatTime(summary.zoneout_time_sec)}</p>
       <p>자리 이탈 비율: {Math.round(summary.present_ratio * 100)}%</p>
