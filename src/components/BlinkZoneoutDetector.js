@@ -264,8 +264,8 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     // ▶ 멍때림(정지) 로직
     const eyeCenter = midpoint(lm[468], lm[473]);
     const faceCenter = lm[1];
-    const isEyeStill = prevEyeCenterRef.current && distance(eyeCenter, prevEyeCenterRef.current) < 0.002;
-    const isFaceStill = prevFaceCenterRef.current && distance(faceCenter, prevFaceCenterRef.current) < 0.002;
+    const isEyeStill = prevEyeCenterRef.current && distance(eyeCenter, prevEyeCenterRef.current) < 0.005;
+    const isFaceStill = prevFaceCenterRef.current && distance(faceCenter, prevFaceCenterRef.current) < 0.005;
     prevEyeCenterRef.current = eyeCenter;
     prevFaceCenterRef.current = faceCenter;
 
