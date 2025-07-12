@@ -15,7 +15,7 @@ import {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const [sensorData, setSensorData] = useState(null);
+
 
 
 const FocusDetailPage = () => {
@@ -25,6 +25,7 @@ const FocusDetailPage = () => {
   const [blinkData, setBlinkData] = useState(null);
   const [focusScoreData, setFocusScoreData] = useState(null);
   const [focusDurations, setFocusDurations] = useState(null);
+  const [sensorData, setSensorData] = useState(null);
 
   // 1) 하루 요약
   useEffect(() => {
