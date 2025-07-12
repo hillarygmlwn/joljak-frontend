@@ -16,6 +16,7 @@ function FocusDashboard() {
   const navigate = useNavigate();
   const [bestHours, setBestHours] = useState([]);
   const [bestPlace, setBestPlace] = useState(null);
+  const [focusDurations, setFocusDurations] = useState(null);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
