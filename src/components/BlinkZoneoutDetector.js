@@ -129,80 +129,22 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
     const height = canvas.height;
-
-    // 1) 이전 프레임 지우기
-    ctx.clearRect(0, 0, width, height);
-
-    // 2) 얼굴 인식 여부 판정
+    const now = Date.now();
     const detected = results.multiFaceLandmarks?.length > 0;
     setPresent(detected);
+
+    
+
+    // 얼굴 감지 프레임 카운트
+    if (detected) presenceFramesRef.current++;
+
     if (!detected) return;
-    presenceFramesRef.current++;
 
-    // 3) 랜드마크 & EAR 계산
     const lm = results.multiFaceLandmarks[0];
-    const leftEyePts = [362, 385, 387, 263, 373, 380].map(i => lm[i]);
-    const rightEyePts = [33, 160, 158, 133, 153, 144].map(i => lm[i]);
-    const ear = (calcEAR(leftEyePts) + calcEAR(rightEyePts)) / 2;
-
-  
-
-    // 4) 얼굴 바운딩 박스 계산
-    const xs = lm.map(p => p.x * width);
-    const ys = lm.map(p => p.y * height);
-    const xMin = Math.min(...xs);
-    const xMax = Math.max(...xs);
-    const yMin = Math.min(...ys);
-    const yMax = Math.max(...ys);
-
-    // 사각형 그리기
-    ctx.strokeStyle = 'magenta';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
-
-    // 왼쪽 눈 윤곽 그리기
-    const leftEyeIdx = [362, 385, 387, 263, 373, 380];
-    ctx.beginPath();
-    leftEyeIdx.forEach((idx, i) => {
-      const x = lm[idx].x * width;
-      const y = lm[idx].y * height;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.closePath();
-    ctx.strokeStyle = 'lime';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // 오른쪽 눈 윤곽 그리기
-    const rightEyeIdx = [33, 160, 158, 133, 153, 144];
-    ctx.beginPath();
-    rightEyeIdx.forEach((idx, i) => {
-      const x = lm[idx].x * width;
-      const y = lm[idx].y * height;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.closePath();
-    ctx.strokeStyle = 'lime';
-    ctx.stroke();
-
-    // 상태 텍스트 찍기 (예: 블링크 수)
-    ctx.font = '18px Arial';
-    ctx.fillStyle = 'yellow';
-    ctx.fillText(`Blinks: ${blinkCount}`, 10, 25);
-    ctx.fillText(`EAR: ${ear.toFixed(2)}`, 10, 45);
-
-
     const leftEye = [362, 385, 387, 263, 373, 380].map(i => lm[i]);
     const rightEye = [33, 160, 158, 133, 153, 144].map(i => lm[i]);
-    
+    const ear = (calcEAR(leftEye) + calcEAR(rightEye)) / 2;
 
-    const now = Date.now();
-    blinkHistoryRef.current.push(now);
-    
-
-    
     // ▶ 깜빡임 로직
     if (ear < blinkThreshold) {
       eyeCloseCounter++;
@@ -214,7 +156,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       if (eyeCloseCounter >= blinkConsecFrames) {
         blinkCountRef.current++;
         setBlinkCount(c => c + 1);
-        
+        blinkHistoryRef.current.push(now);
 
         // 10초 간격으로만 알림
         if (
@@ -232,8 +174,8 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     const eyeCenter = midpoint(lm[468], lm[473]);
     const faceCenter = lm[1];
     if (prevEyeCenter) {
-      eyeStillFrames = distance(eyeCenter, prevEyeCenter) < 0.002 ? eyeStillFrames + 1 : 0;
-      faceStillFrames = distance(faceCenter, prevFaceCenter) < 0.002 ? faceStillFrames + 1 : 0;
+      eyeStillFrames = distance(eyeCenter, prevEyeCenter) < 0.005 ? eyeStillFrames + 1 : 0;
+      faceStillFrames = distance(faceCenter, prevFaceCenter) < 0.005 ? faceStillFrames + 1 : 0;
     }
     prevEyeCenter = eyeCenter;
     prevFaceCenter = faceCenter;
