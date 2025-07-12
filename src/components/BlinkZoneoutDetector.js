@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import alertsound from './assets/alertsound.mp3';  // 알림음 파일 경로
+import alertsound from '../assets/alertsound.mp3';  // 알림음 파일 경로
 
 function BlinkZoneoutDetector({ sessionId, isRunning }) {
   // ─── 1) ref & state 선언 ─────────────────────────
@@ -199,7 +199,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       />
       {/* ─── (2) audio 태그 삽입 ─── */}
       <audio ref={audioRef} src={alertsound} preload="auto" />
-      
+
       <p>눈 깜빡임 횟수: {blinkCount}</p>
       <p>눈 감은 시간: {(eyeClosedTime / FPS).toFixed(1)}초</p>
       <p>멍 때린 시간: {(zoningOutTime / FPS).toFixed(1)}초</p>
