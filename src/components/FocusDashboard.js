@@ -42,7 +42,9 @@ function FocusDashboard() {
         // 달력용 데이터 세팅
         const focusMap = {};
         resAll.data.forEach(item => {
-          focusMap[item.date] = item.focus_score;
+          // "2025-07-10T00:00:00Z" -> "2025-07-10"
+          const day = item.date.split('T')[0];
+          focusMap[day] = item.focus_score;
         });
         setFocusData(focusMap);
 
@@ -96,9 +98,7 @@ function FocusDashboard() {
     if (view === 'month') {
       const dateStr = formatDate(date);
       const score = focusData[dateStr];
-      if (score !== undefined && score > 0) {
-        return <div className="focus-score">{score}점</div>;
-      }
+      return score ? <div className="focus-score">{score}점</div> : null;
     }
     return null;
   };
