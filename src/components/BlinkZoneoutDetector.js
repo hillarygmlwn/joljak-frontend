@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import alertsound from '../assets/alertsound.mp3';
+import alertsound from '../assets/alertsound.mp3';  // 알림음 파일 경로
 
 function BlinkZoneoutDetector({ sessionId, isRunning }) {
   // ─── 1) ref & state 선언 ─────────────────────────
@@ -7,20 +7,20 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
   const audioRef = useRef(null);
   const canvasRef = useRef(null);
 
-  const [blinkCount, setBlinkCount]       = useState(0);
+  const [blinkCount, setBlinkCount] = useState(0);
   const [eyeClosedTime, setEyeClosedTime] = useState(0);
   const [zoningOutTime, setZoningOutTime] = useState(0);
-  const [present, setPresent]             = useState(false);
+  const [present, setPresent] = useState(false);
 
   // 알림 타이밍 관리용
-  const lastBlinkAlertRef   = useRef(Date.now());
+  const lastBlinkAlertRef = useRef(Date.now());
   const lastZoneoutAlertRef = useRef(Date.now());
 
   // 카운팅 및 업로드 로직용 ref
-  const blinkHistoryRef   = useRef([]);
-  const blinkCountRef     = useRef(0);
-  const eyeClosedTimeRef  = useRef(0);
-  const zoningOutTimeRef  = useRef(0);
+  const blinkHistoryRef = useRef([]);
+  const blinkCountRef = useRef(0);
+  const eyeClosedTimeRef = useRef(0);
+  const zoningOutTimeRef = useRef(0);
   const presenceFramesRef = useRef(0);
 
   const startedRef = useRef(false);
@@ -29,8 +29,12 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
   const playAndAlert = (message) => {
     if (!audioRef.current) return;
     audioRef.current.currentTime = 0;
-    audioRef.current.play().catch(() => console.warn('-- 자동 재생 차단됨 --'));
-    setTimeout(() => alert(message), 50);
+    audioRef.current.play().catch(() => {
+      console.warn('-- 자동 재생 차단됨 --');
+    });
+    setTimeout(() => {
+      alert(message);
+    }, 50);  // 50ms 딜레이
   };
 
   // ─── 2) 10초마다 서버 업로드 ─────────────────────
@@ -40,18 +44,21 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     startedRef.current = true;
 
     const FPS = 30;
-    const REQUIRED_FRAMES = FPS * 5;
+    const REQUIRED_FRAMES = FPS * 5; // 5초
+
     const interval = setInterval(() => {
       const now = new Date();
       const payload = {
-        session:           sessionId,
-        blink_count:       blinkCountRef.current,
-        eyes_closed_time:  eyeClosedTimeRef.current / FPS,
-        zoning_out_time:   zoningOutTimeRef.current / FPS,
-        present:           presenceFramesRef.current >= REQUIRED_FRAMES,
-        heart_rate:        75,
-        time:              now.toISOString(),
+        session: sessionId,
+        blink_count: blinkCountRef.current,
+        eyes_closed_time: eyeClosedTimeRef.current / FPS,
+        zoning_out_time: zoningOutTimeRef.current / FPS,
+        present: presenceFramesRef.current >= REQUIRED_FRAMES,
+        heart_rate: 75,
+        time: now.toISOString(),
       };
+
+      console.log("전송할 데이터:", payload);
       fetch("https://learningas.shop/focus/upload/", {
         method: "POST",
         headers: {
@@ -61,9 +68,10 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
         body: JSON.stringify(payload),
       }).catch(console.error);
 
-      blinkCountRef.current     = 0;
-      eyeClosedTimeRef.current  = 0;
-      zoningOutTimeRef.current  = 0;
+      // 카운터 초기화
+      blinkCountRef.current = 0;
+      eyeClosedTimeRef.current = 0;
+      zoningOutTimeRef.current = 0;
       presenceFramesRef.current = 0;
       setBlinkCount(0);
       setEyeClosedTime(0);
@@ -86,75 +94,116 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     });
     faceMesh.onResults(onResults);
 
-    new window.Camera(videoRef.current, {
-      onFrame: async () => await faceMesh.send({ image: videoRef.current }),
+    const camera = new window.Camera(videoRef.current, {
+      onFrame: async () => { await faceMesh.send({ image: videoRef.current }); },
       width: 640,
       height: 480,
-    }).start();
+    });
+    camera.start();
   }, []);
 
   // ─── 4) onResults (프레임별 처리) ─────────────────
   let eyeCloseCounter = 0;
-  let prevEyeCenter   = null;
-  let prevFaceCenter  = null;
-  let eyeStillFrames  = 0;
+  let prevEyeCenter = null;
+  let prevFaceCenter = null;
+  let eyeStillFrames = 0;
   let faceStillFrames = 0;
 
-  const blinkThreshold    = 0.2;
+  const blinkThreshold = 0.2;
   const blinkConsecFrames = 3;
-  const stillThreshold    = 60; // 2초 @30fps
+  const stillThreshold = 60; // 2초 @30fps
 
   function distance(p1, p2) {
     return Math.hypot(p1.x - p2.x, p1.y - p2.y);
   }
   function calcEAR(eye) {
     return (distance(eye[1], eye[5]) + distance(eye[2], eye[4])) /
-           (2 * distance(eye[0], eye[3]));
+      (2 * distance(eye[0], eye[3]));
   }
   function midpoint(a, b) {
     return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   }
 
   function onResults(results) {
-    const now = Date.now();
     const canvas = canvasRef.current;
-    const ctx    = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
 
-    // 1) clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 1) 이전 프레임 지우기
+    ctx.clearRect(0, 0, width, height);
 
-    // 2) 얼굴 인식 여부
+    // 2) 얼굴 인식 여부 판정
     const detected = results.multiFaceLandmarks?.length > 0;
     setPresent(detected);
     if (!detected) return;
     presenceFramesRef.current++;
 
     // 3) 랜드마크 & EAR 계산
-    const lm        = results.multiFaceLandmarks[0];
-    const leftEye   = [362,385,387,263,373,380].map(i => lm[i]);
-    const rightEye  = [33,160,158,133,153,144].map(i => lm[i]);
-    const ear       = (calcEAR(leftEye) + calcEAR(rightEye)) / 2;
+    const lm = results.multiFaceLandmarks[0];
+    const leftEyePts = [362, 385, 387, 263, 373, 380].map(i => lm[i]);
+    const rightEyePts = [33, 160, 158, 133, 153, 144].map(i => lm[i]);
+    const ear = (calcEAR(leftEyePts) + calcEAR(rightEyePts)) / 2;
 
-    // 4) 얼굴 바운딩 박스 그리기
-    const xs   = lm.map(p => p.x * canvas.width);
-    const ys   = lm.map(p => p.y * canvas.height);
-    const xMin = Math.min(...xs), xMax = Math.max(...xs);
-    const yMin = Math.min(...ys), yMax = Math.max(...ys);
+  
+
+    // 4) 얼굴 바운딩 박스 계산
+    const xs = lm.map(p => p.x * width);
+    const ys = lm.map(p => p.y * height);
+    const xMin = Math.min(...xs);
+    const xMax = Math.max(...xs);
+    const yMin = Math.min(...ys);
+    const yMax = Math.max(...ys);
+
+    // 사각형 그리기
     ctx.strokeStyle = 'magenta';
-    ctx.lineWidth   = 2;
+    ctx.lineWidth = 2;
     ctx.strokeRect(xMin, yMin, xMax - xMin, yMax - yMin);
 
-    // 5) 눈 깜빡임 표시 (빨간 원)
-    if (eyeCloseCounter >= blinkConsecFrames) {
-      const cx = ((leftEye[0].x + leftEye[3].x) / 2) * canvas.width;
-      const cy = ((leftEye[1].y + leftEye[5].y) / 2) * canvas.height;
-      ctx.fillStyle = 'red';
-      ctx.beginPath();
-      ctx.arc(cx, cy, 15, 0, 2 * Math.PI);
-      ctx.fill();
-    }
+    // 왼쪽 눈 윤곽 그리기
+    const leftEyeIdx = [362, 385, 387, 263, 373, 380];
+    ctx.beginPath();
+    leftEyeIdx.forEach((idx, i) => {
+      const x = lm[idx].x * width;
+      const y = lm[idx].y * height;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.strokeStyle = 'lime';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
 
-    // 6) 깜빡임 로직
+    // 오른쪽 눈 윤곽 그리기
+    const rightEyeIdx = [33, 160, 158, 133, 153, 144];
+    ctx.beginPath();
+    rightEyeIdx.forEach((idx, i) => {
+      const x = lm[idx].x * width;
+      const y = lm[idx].y * height;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.strokeStyle = 'lime';
+    ctx.stroke();
+
+    // 상태 텍스트 찍기 (예: 블링크 수)
+    ctx.font = '18px Arial';
+    ctx.fillStyle = 'yellow';
+    ctx.fillText(`Blinks: ${blinkCount}`, 10, 25);
+    ctx.fillText(`EAR: ${ear.toFixed(2)}`, 10, 45);
+
+
+    const leftEye = [362, 385, 387, 263, 373, 380].map(i => lm[i]);
+    const rightEye = [33, 160, 158, 133, 153, 144].map(i => lm[i]);
+    
+
+    const now = Date.now();
+    blinkHistoryRef.current.push(now);
+    
+
+    
+    // ▶ 깜빡임 로직
     if (ear < blinkThreshold) {
       eyeCloseCounter++;
       setEyeClosedTime(prev => {
@@ -165,11 +214,12 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       if (eyeCloseCounter >= blinkConsecFrames) {
         blinkCountRef.current++;
         setBlinkCount(c => c + 1);
-        blinkHistoryRef.current.push(now);
+        
 
+        // 10초 간격으로만 알림
         if (
-          now - lastBlinkAlertRef.current > 10*1000 &&
-          blinkHistoryRef.current.filter(t => t > now - 5*60*1000).length < 3
+          now - lastBlinkAlertRef.current > 10 * 1000 &&
+          blinkHistoryRef.current.filter(t => t > now - 5 * 60 * 1000).length < 3
         ) {
           playAndAlert('최근 5분간 깜빡임이 너무 적습니다. 휴식을 권장합니다.');
           lastBlinkAlertRef.current = now;
@@ -178,17 +228,18 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       eyeCloseCounter = 0;
     }
 
-    // 7) 멍때림 로직 (변경 없음)
+    // ▶ 멍때림 로직
     const eyeCenter = midpoint(lm[468], lm[473]);
     const faceCenter = lm[1];
     if (prevEyeCenter) {
-      eyeStillFrames  = distance(eyeCenter, prevEyeCenter) < 0.002 ? eyeStillFrames+1 : 0;
-      faceStillFrames = distance(faceCenter, prevFaceCenter) < 0.002 ? faceStillFrames+1 : 0;
+      eyeStillFrames = distance(eyeCenter, prevEyeCenter) < 0.002 ? eyeStillFrames + 1 : 0;
+      faceStillFrames = distance(faceCenter, prevFaceCenter) < 0.002 ? faceStillFrames + 1 : 0;
     }
-    prevEyeCenter  = eyeCenter;
+    prevEyeCenter = eyeCenter;
     prevFaceCenter = faceCenter;
+
     if (eyeStillFrames > stillThreshold && faceStillFrames > stillThreshold) {
-      if (now - lastZoneoutAlertRef.current > 10*1000) {
+      if (now - lastZoneoutAlertRef.current > 10 * 1000) {
         playAndAlert('멍 때리는 중인 것 같아요! 집중해볼까요?');
         lastZoneoutAlertRef.current = now;
       }
@@ -218,6 +269,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
         height={480}
         style={{ position: 'absolute', top: 0, left: 0 }}
       />
+      {/* ─── (2) audio 태그 삽입 ─── */}
       <audio ref={audioRef} src={alertsound} preload="auto" />
 
       <p>눈 깜빡임 횟수: {blinkCount}</p>
@@ -228,4 +280,4 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
   );
 }
 
-export default BlinkZoneoutDetector;
+export default BlinkZoneoutDetector;  
