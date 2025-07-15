@@ -21,6 +21,9 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
   const [zoningOutTime, setZoningOutTime] = useState(0);
   const [present, setPresent] = useState(false);
 
+  //알림 저절로 꺼지는걸로 바꾸기
+  const [notifyMessage, setNotifyMessage] = useState(null);
+
   // 알림 타이밍 관리용
   const lastBlinkAlertRef = useRef(Date.now());
   const lastZoneoutAlertRef = useRef(Date.now());
@@ -45,20 +48,17 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     : 0;
 
 
-  // ─── playAndAlert 헬퍼 ─────────────────────────
-  const playAndAlert = (message) => {
+  // ─── playAndNotify 로 수정 ─────────────────────────
+  const playAndNotify = (message) => {
     if (!audioRef.current) return;
     audioRef.current.currentTime = 0;
-    // 1) 소리를 먼저 재생
-    audioRef.current.play().catch(() => {
-      console.warn('-- 자동 재생 차단됨 --');
-    });
-    // 2) sound가 재생되는 동안 alert은 지연
-    //    (예: 500ms 뒤에 alert 띄우기)
-    setTimeout(() => {
-      alert(message);
-    }, 500);
+    audioRef.current.play().catch(() => console.warn('-- 자동 재생 차단됨 --'));
+    // 커스텀 알림 띄우기
+    setNotifyMessage(message);
+    // 3초 뒤 알림 자동 제거
+    setTimeout(() => setNotifyMessage(null), 3000);
   };
+
 
 
   // ─── 2) 10초마다 서버 업로드 ─────────────────────
@@ -249,7 +249,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
         eyeCloseCounterRef.current >= LONG_CLOSE_FRAMES &&
         Date.now() - lastLongCloseAlertRef.current > 5000
       ) {
-        playAndAlert('눈을 5초 이상 감고 있어요! 깨어보세요.');
+        playAndNotify('눈을 5초 이상 감고 있어요! 깨어보세요.');
         lastLongCloseAlertRef.current = Date.now();
       }
     } else {
@@ -286,7 +286,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       zoningSeconds >= 5 &&
       Date.now() - lastZoneoutAlertRef.current > 5000
     ) {
-      playAndAlert('멍때림이 5초 이상 지속되고 있어요! 집중하세요.');
+      playAndNotify('멍때림이 5초 이상 지속되고 있어요! 집중하세요.');
       lastZoneoutAlertRef.current = Date.now();
     }
 
@@ -313,9 +313,25 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
           height={480}
           style={{ position: 'absolute', top: 0, left: 0 }}
         />
-        {/* ─── (2) audio 태그 삽입 ─── */}
+        {/* ───  audio 태그 삽입 ─── */}
         <audio ref={audioRef} src={alertsound} preload="auto" />
-
+         {/* 커스텀 알림 */}
+        {notifyMessage && (
+        <div style={{
+          position: 'absolute',
+          top: 20,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(0,0,0,0.7)',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: 4,
+          zIndex: 10,
+          fontSize: 16,
+        }}>
+          {notifyMessage}
+          </div>
+      )}
       </div>
 
       <div style={{ marginTop: 10 }}>
