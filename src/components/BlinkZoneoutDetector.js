@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import alertsound from '../assets/alertsound.mp3';  // 알림음 파일 경로
 
 function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
+  const FPS = 30;
+  
   // ─── 1) ref & state 선언 ─────────────────────────
   const videoRef = useRef(null);
   const audioRef = useRef(null);
@@ -77,7 +79,6 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
     
     startedRef.current = true;
 
-    const FPS = 30;
     const REQUIRED_FRAMES = FPS * 5; // 5초
 
     intervalId = setInterval(() => {
@@ -163,7 +164,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
   }
 
   function onResults(results) {
-    const FPS = 30;
+    
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
@@ -308,6 +309,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
 
 
   return (
+    
     <>
       <div style={{ position: 'relative', width: 640, height: 480 }}>
         <video
