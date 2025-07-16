@@ -61,7 +61,7 @@ function LoginPage() {
           value={form.password}
           onChange={handleChange}
         />
-        <button className="btn" onClick={handleSubmit}>
+        <button className="login-btn" onClick={handleSubmit}>
           로그인
         </button>
 

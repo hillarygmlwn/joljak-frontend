@@ -39,6 +39,22 @@
   border-bottom: 2px solid #0091D3;
 }
 
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  background-color: #0091D3;
+  color: white;
+  font-size: 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+}
+
+.login-btn:hover {
+  background-color: #007ab3;
+}
+
 .btn {
   width: 100%;
   padding: 14px;
