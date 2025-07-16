@@ -163,6 +163,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
   }
 
   function onResults(results) {
+    const FPS = 30;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
