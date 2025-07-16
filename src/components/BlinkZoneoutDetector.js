@@ -3,7 +3,7 @@ import alertsound from '../assets/alertsound.mp3';  // 알림음 파일 경로
 
 function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
   const FPS = 30;
-  
+
   // ─── 1) ref & state 선언 ─────────────────────────
   const videoRef = useRef(null);
   const audioRef = useRef(null);
@@ -62,6 +62,26 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
     setTimeout(() => setNotifyMessage(null), 3000);
   };
 
+  const prevPausedRef = useRef(isPaused);
+  // 휴식에서 재개될 때 한 번 초기화
+  useEffect(() => {
+    if (prevPausedRef.current === true && isPaused === false) {
+      // ref 초기화
+      blinkCountRef.current = 0;
+      eyeClosedTimeRef.current = 0;
+      zoningOutTimeRef.current = 0;
+      zoneoutStartRef.current = null;
+      // 화면에 보여지는 state 초기화
+      setBlinkCount(0);
+      setEyeClosedTime(0);
+      setZoningOutTime(0);
+
+      // 10초 전송 이펙트를 다시 시작할 수 있도록 unlock
+      startedRef.current = false;
+    }
+    prevPausedRef.current = isPaused;
+  }, [isPaused]);
+
 
 
   // ─── 2) 10초마다 서버 업로드 ─────────────────────
@@ -73,10 +93,12 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
       startedRef.current = false;
       return;
     }
+
     if (typeof window === 'undefined') return;  // SSR 차단
     if (!videoRef.current) return;             // videoRef 확인
     if (startedRef.current) return;
-    
+
+
     startedRef.current = true;
 
     const REQUIRED_FRAMES = FPS * 5; // 5초
@@ -164,7 +186,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
   }
 
   function onResults(results) {
-    
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     const width = canvas.width;
@@ -309,7 +331,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
 
 
   return (
-    
+
     <>
       <div style={{ position: 'relative', width: 640, height: 480 }}>
         <video
