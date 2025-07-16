@@ -12,9 +12,7 @@ function StudySessionPage() {
   const [restTime, setRestTime] = useState(0);
   const [place, setPlace] = useState(localStorage.getItem('place') || '');
   const navigate = useNavigate();
-  const [isPaused, setIsPaused] = useState(false);
-  const handlePause = () => setIsPaused(true);
-  const handleResume = () => setIsPaused(false);
+  
 
   // 1초 단위 공부/휴식 시간 카운트
   useEffect(() => {
@@ -107,7 +105,7 @@ function StudySessionPage() {
       <BlinkZoneoutDetector
         sessionId={localStorage.getItem('session_id')}
         isRunning={isRunning}
-        isPaused={isPaused}
+        isPaused={isResting}
       />
 
       <video id="webcam" autoPlay playsInline muted width="640" height="480" />
