@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import alertsound from '../assets/alertsound.mp3';  // 알림음 파일 경로
 
-function BlinkZoneoutDetector({ sessionId, isRunning }) {
+function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
   // ─── 1) ref & state 선언 ─────────────────────────
   const videoRef = useRef(null);
   const audioRef = useRef(null);
@@ -34,7 +34,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
   const blinkCountRef = useRef(0);
   const eyeClosedTimeRef = useRef(0);
   const zoningOutTimeRef = useRef(0);
-  const presenceFramesRef = useRef(0);
+
   const detectedRef = useRef(false);    // 얼굴 감지 플래그
 
   const startedRef = useRef(false);
@@ -64,10 +64,13 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
 
   // ─── 2) 10초마다 서버 업로드 ─────────────────────
   useEffect(() => {
-    if (!sessionId || !isRunning || isPaused) return; // 공부중일때만 데이터 전송
+    if (isPaused) {
+      startedRef.current = false;
+      return;
+    }
+    if (!sessionId || !isRunning) return; // 공부중일때만 데이터 전송
     if (typeof window === 'undefined') return;  // SSR 차단
     if (!videoRef.current) return;             // videoRef 확인
-    if (!sessionId || !isRunning) return;
     if (startedRef.current) return;
     startedRef.current = true;
 
@@ -81,7 +84,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
         blink_count: blinkCountRef.current,
         eyes_closed_time: eyeClosedTimeRef.current / FPS,
         zoning_out_time: zoningOutTimeRef.current / FPS,
-        present: detectedRef.current, 
+        present: detectedRef.current,
         heart_rate: 75,
         time: now.toISOString(),
       };
@@ -100,7 +103,6 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
       blinkCountRef.current = 0;
       eyeClosedTimeRef.current = 0;
       zoningOutTimeRef.current = 0;
-      presenceFramesRef.current = 0;
       setBlinkCount(0);
       setEyeClosedTime(0);
       setZoningOutTime(0);
@@ -165,11 +167,11 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     ctx.clearRect(0, 0, width, height);
 
     // 2) 얼굴 인식 여부 판정
-    const detected = results.multiFaceLandmarks?.length > 0;
+    const detected = !!results.multiFaceLandmarks?.length;
     detectedRef.current = detected;
     setPresent(detected);
     if (!detected) return;
-    presenceFramesRef.current++;
+
 
     // 3) 랜드마크 & EAR 계산
     const lm = results.multiFaceLandmarks[0];
@@ -318,23 +320,23 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
         />
         {/* ───  audio 태그 삽입 ─── */}
         <audio ref={audioRef} src={alertsound} preload="auto" />
-         {/* 커스텀 알림 */}
+        {/* 커스텀 알림 */}
         {notifyMessage && (
-        <div style={{
-          position: 'absolute',
-          top: 20,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(0,0,0,0.7)',
-          color: 'white',
-          padding: '8px 16px',
-          borderRadius: 4,
-          zIndex: 10,
-          fontSize: 16,
-        }}>
-          {notifyMessage}
+          <div style={{
+            position: 'absolute',
+            top: 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(0,0,0,0.7)',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: 4,
+            zIndex: 10,
+            fontSize: 16,
+          }}>
+            {notifyMessage}
           </div>
-      )}
+        )}
       </div>
 
       <div style={{ marginTop: 10 }}>
