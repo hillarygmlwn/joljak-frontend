@@ -35,6 +35,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
   const eyeClosedTimeRef = useRef(0);
   const zoningOutTimeRef = useRef(0);
   const presenceFramesRef = useRef(0);
+  const detectedRef = useRef(false);    // 얼굴 감지 플래그
 
   const startedRef = useRef(false);
 
@@ -63,6 +64,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
 
   // ─── 2) 10초마다 서버 업로드 ─────────────────────
   useEffect(() => {
+    if (!sessionId || !isRunning || isPaused) return; // 공부중일때만 데이터 전송
     if (typeof window === 'undefined') return;  // SSR 차단
     if (!videoRef.current) return;             // videoRef 확인
     if (!sessionId || !isRunning) return;
@@ -79,7 +81,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
         blink_count: blinkCountRef.current,
         eyes_closed_time: eyeClosedTimeRef.current / FPS,
         zoning_out_time: zoningOutTimeRef.current / FPS,
-        present: presenceFramesRef.current >= REQUIRED_FRAMES,
+        present: detectedRef.current, 
         heart_rate: 75,
         time: now.toISOString(),
       };
@@ -105,7 +107,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [sessionId, isRunning]);
+  }, [sessionId, isRunning, isPaused]);
 
   // ─── 3) Mediapipe FaceMesh 초기화 ────────────────
   useEffect(() => {
@@ -164,6 +166,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
 
     // 2) 얼굴 인식 여부 판정
     const detected = results.multiFaceLandmarks?.length > 0;
+    detectedRef.current = detected;
     setPresent(detected);
     if (!detected) return;
     presenceFramesRef.current++;
@@ -264,8 +267,8 @@ function BlinkZoneoutDetector({ sessionId, isRunning }) {
     // ▶ 멍때림(정지) 로직
     const eyeCenter = midpoint(lm[468], lm[473]);
     const faceCenter = lm[1];
-    const isEyeStill = prevEyeCenterRef.current && distance(eyeCenter, prevEyeCenterRef.current) < 0.01;
-    const isFaceStill = prevFaceCenterRef.current && distance(faceCenter, prevFaceCenterRef.current) < 0.01;
+    const isEyeStill = prevEyeCenterRef.current && distance(eyeCenter, prevEyeCenterRef.current) < 0.002;
+    const isFaceStill = prevFaceCenterRef.current && distance(faceCenter, prevFaceCenterRef.current) < 0.002;
     prevEyeCenterRef.current = eyeCenter;
     prevFaceCenterRef.current = faceCenter;
 
