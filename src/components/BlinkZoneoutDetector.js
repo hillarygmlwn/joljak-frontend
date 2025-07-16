@@ -146,8 +146,8 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
   let eyeStillFrames = 0;
   let faceStillFrames = 0;
 
-  const blinkThreshold = 0.2;
-  const blinkConsecFrames = 3;
+  const blinkThreshold = 0.3;
+  const blinkConsecFrames = 1;
   const stillThreshold = 60; // 2초 @30fps
 
   function distance(p1, p2) {
