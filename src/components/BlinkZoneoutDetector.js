@@ -67,20 +67,21 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
 
     let intervalId;
 
-    if (isPaused) {
+    if (!sessionId || !isRunning || isPaused) {
       startedRef.current = false;
-      return () => intervalId && clearInterval(intervalId);
+      return;
     }
-    if (!sessionId || !isRunning) return; // 공부중일때만 데이터 전송
     if (typeof window === 'undefined') return;  // SSR 차단
     if (!videoRef.current) return;             // videoRef 확인
     if (startedRef.current) return;
+    
     startedRef.current = true;
 
     const FPS = 30;
     const REQUIRED_FRAMES = FPS * 5; // 5초
 
     intervalId = setInterval(() => {
+      const now = new Date();
       const payload = {
         session: sessionId,
         blink_count: blinkCountRef.current,
@@ -289,6 +290,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
 
     const zoningSeconds = zoneoutStartRef.current ? (Date.now() - zoneoutStartRef.current) / 1000 : 0;
     setZoningOutTime(zoningSeconds);
+    zoningOutTimeRef.current = zoningSeconds;
 
     // 5초 이상 멍때림 시 바로 알림
     if (
@@ -302,7 +304,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
 
   }
   // ─── 5) 렌더링 ───────────────────────────────────
-  
+
 
   return (
     <>
