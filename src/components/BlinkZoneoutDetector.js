@@ -64,9 +64,12 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
 
   // ─── 2) 10초마다 서버 업로드 ─────────────────────
   useEffect(() => {
+
+    let intervalId;
+
     if (isPaused) {
       startedRef.current = false;
-      return;
+      return () => intervalId && clearInterval(intervalId);
     }
     if (!sessionId || !isRunning) return; // 공부중일때만 데이터 전송
     if (typeof window === 'undefined') return;  // SSR 차단
@@ -77,8 +80,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
     const FPS = 30;
     const REQUIRED_FRAMES = FPS * 5; // 5초
 
-    const interval = setInterval(() => {
-      const now = new Date();
+    intervalId = setInterval(() => {
       const payload = {
         session: sessionId,
         blink_count: blinkCountRef.current,
@@ -88,6 +90,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
         heart_rate: 75,
         time: now.toISOString(),
       };
+
 
       console.log("전송할 데이터:", payload);
       fetch("https://learningas.shop/focus/upload/", {
@@ -108,7 +111,8 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
       setZoningOutTime(0);
     }, 10000);
 
-    return () => clearInterval(interval);
+    return () => clearInterval(intervalId);
+
   }, [sessionId, isRunning, isPaused]);
 
   // ─── 3) Mediapipe FaceMesh 초기화 ────────────────
@@ -269,8 +273,8 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
     // ▶ 멍때림(정지) 로직
     const eyeCenter = midpoint(lm[468], lm[473]);
     const faceCenter = lm[1];
-    const isEyeStill = prevEyeCenterRef.current && distance(eyeCenter, prevEyeCenterRef.current) < 0.002;
-    const isFaceStill = prevFaceCenterRef.current && distance(faceCenter, prevFaceCenterRef.current) < 0.002;
+    const isEyeStill = prevEyeCenterRef.current && distance(eyeCenter, prevEyeCenterRef.current) < 0.003;
+    const isFaceStill = prevFaceCenterRef.current && distance(faceCenter, prevFaceCenterRef.current) < 0.003;
     prevEyeCenterRef.current = eyeCenter;
     prevFaceCenterRef.current = faceCenter;
 
@@ -298,7 +302,7 @@ function BlinkZoneoutDetector({ sessionId, isRunning, isPaused = false }) {
 
   }
   // ─── 5) 렌더링 ───────────────────────────────────
-  const FPS = 30;
+  
 
   return (
     <>
