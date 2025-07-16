@@ -142,7 +142,15 @@ function FocusDashboard() {
         </div>
         <div className="menu">유저설정</div>
         <div className="menu">캘린더</div>
-        <div className="menu">예비1</div>
+        <div
+          className="menu"
+          onClick={() => {
+            navigate('/feedback');
+            setSidebarOpen(false);
+          }}
+        >
+          사용자 맞춤 피드백
+        </div>
         {/* 로그아웃 메뉴에 onClick 연결 */}
         <div className="menu logout" onClick={handleLogout}>
           로그아웃
