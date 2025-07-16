@@ -12,7 +12,7 @@ function StudySessionPage() {
   const [restTime, setRestTime] = useState(0);
   const [place, setPlace] = useState(localStorage.getItem('place') || '');
   const navigate = useNavigate();
-  
+
 
   // 1초 단위 공부/휴식 시간 카운트
   useEffect(() => {
@@ -80,36 +80,40 @@ function StudySessionPage() {
 
   return (
     <div className="study-session-page">
-      <HomeButton />
-      <h1>
-        {!isRunning ? '준비 상태'
-          : isResting ? '휴식 중'
-            : '공부 중'
-        }
-      </h1>
-      <p>누적 공부 시간: {formatTime(studyTime)}</p>
-      <p>누적 휴식 시간: {formatTime(restTime)}</p>
-      <p>장소: {place || '선택 필요'}</p>
+      <div className="study-session-page">
+        <HomeButton />
+        <h1>
+          {!isRunning ? '준비 상태'
+            : isResting ? '휴식 중'
+              : '공부 중'
+          }
+        </h1>
+        <p>누적 공부 시간: {formatTime(studyTime)}</p>
+        <p>누적 휴식 시간: {formatTime(restTime)}</p>
+        <p>장소: {place || '선택 필요'}</p>
 
-      {!isRunning
-        ? <button onClick={handleStart} disabled={!place}>공부 시작</button>
-        : (
-          <>
-            <button onClick={toggleRest}>
-              {isResting ? '재개' : '휴식'}
-            </button>
-            <button onClick={handleEnd} style={{ marginLeft: 8 }}>공부 종료</button>
-          </>
-        )}
+        {!isRunning
+          ? <button onClick={handleStart} disabled={!place}>공부 시작</button>
+          : (
+            <>
+              <button onClick={toggleRest}>
+                {isResting ? '재개' : '휴식'}
+              </button>
+              <button onClick={handleEnd} style={{ marginLeft: 8 }}>공부 종료</button>
+            </>
+          )}
 
-      <BlinkZoneoutDetector
-        sessionId={localStorage.getItem('session_id')}
-        isRunning={isRunning}
-        isPaused={isResting}
-      />
+        <BlinkZoneoutDetector
+          sessionId={localStorage.getItem('session_id')}
+          isRunning={isRunning}
+          isPaused={isResting}
+        />
 
-      <video id="webcam" autoPlay playsInline muted width="640" height="480" />
+        <video id="webcam" autoPlay playsInline muted width="640" height="480" />
+      </div>
+
     </div>
+
   );
 }
 
