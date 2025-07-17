@@ -7,4 +7,7 @@ urlpatterns = [
     # 기존 URL 패턴들…
     path('archetype/', views.archetype_view, name='archetype'),
     path('daily-schedule/', views.daily_schedule_view, name='daily_schedule'),
+    path('anomaly/', views.anomaly_view, name='anomaly'),
 ]
+
+#4번까지 완료 

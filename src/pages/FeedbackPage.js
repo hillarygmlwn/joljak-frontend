@@ -4,75 +4,104 @@ import axios from 'axios';
 
 // ① 유형별 이름·설명·팁 매핑
 const TYPE_INFO = {
-  0: {
-    name: '야행성(夜行性)',
-    description: '저녁·심야에 집중도가 높고, 아침보다는 저녁에 더 잘 몰입하는 스타일',
-    tip: '오늘도 밤 시간대가 최적! 8시 이후에 가장 몰입도가 높으니, 저녁 스케줄을 활용해 보세요.',
-  },
-  1: {
-    name: '주행성(日行性)',
-    description: '낮 시간(오전·오후)에 집중도가 최고인 스타일',
-    tip: '오전 9시~12시가 골든타임! 이 시간에 핵심 과제를 배치하면 효율이 상승합니다.',
-  },
-  2: {
-    name: '휴식 중시형',
-    description: '짧은 휴식을 자주 취해야 집중이 유지되는 스타일',
-    tip: '25분 공부 후 5분 휴식(포모도로)이 딱 맞아요. 타이머를 켜두고 규칙적으로 쉬어보세요.',
-  },
-  3: {
-    name: '스프린터형',
-    description: '짧고 강한 몰입 세션을 선호해 빠르게 끝내고 다음 세션으로 넘어가는 스타일',
-    tip: '15분 전력질주 후 2분 스트레칭으로 컨디션을 회복하면 좋습니다.',
-  }
+    0: {
+        name: '야행성',
+        description: '저녁·심야에 집중도가 높고, 아침보다는 저녁에 더 잘 몰입하는 스타일',
+        tip: '오늘도 밤 시간대가 최적! 8시 이후에 가장 몰입도가 높으니, 저녁 스케줄을 활용해 보세요.',
+    },
+    1: {
+        name: '주행성',
+        description: '낮 시간(오전·오후)에 집중도가 최고인 스타일',
+        tip: '오전 9시~12시가 골든타임! 이 시간에 핵심 과제를 배치하면 효율이 상승합니다.',
+    },
+    2: {
+        name: '휴식 중시형',
+        description: '짧은 휴식을 자주 취해야 집중이 유지되는 스타일',
+        tip: '25분 공부 후 5분 휴식(포모도로)이 딱 맞아요. 타이머를 켜두고 규칙적으로 쉬어보세요.',
+    },
+    3: {
+        name: '스프린터형',
+        description: '짧고 강한 몰입 세션을 선호해 빠르게 끝내고 다음 세션으로 넘어가는 스타일',
+        tip: '100분 몰입 후 10분 휴식으로 컨디션을 회복하면 좋습니다.',
+    }
 };
 
 export default function FeedbackPage() {
-  const [data, setData] = useState(null);
+    const [data, setData] = useState(null);
+    const [schedule, setSchedule] = useState(null);
 
-  useEffect(() => {
-    axios.get('/focus/archetype/', {
-      headers: { Authorization: `Token ${localStorage.getItem('token')}` }
-    })
-    .then(res => setData(res.data))
-    .catch(console.error);
-  }, []);
+    useEffect(() => {
+        // ② 아키타입과 daily-schedule을 병렬 호출
+        const token = localStorage.getItem('token');
+        const archetypeReq = axios.get('/focus/archetype/', {
+            headers: { Authorization: `Token ${token}` }
+        });
+        const scheduleReq = axios.get('/focus/daily-schedule/', {
+            headers: { Authorization: `Token ${token}` }
+        });
 
-  if (!data) return <p>로딩 중…</p>;
+        Promise.all([archetypeReq, scheduleReq])
+            .then(([archetypeRes, scheduleRes]) => {
+                setData(archetypeRes.data);
+                setSchedule(scheduleRes.data);
+            })
+            .catch(console.error);
+    }, []);
 
-  const { archetype } = data;
-  const info = TYPE_INFO[archetype] || {};
+    if (!data || !schedule) return <p>로딩 중…</p>;
 
-  // ② JSX는 최상위 하나의 div로 감싸기
-  return (
-    <div style={{ padding: 20, maxWidth: 600, margin: '0 auto' }}>
-      <h2>당신의 집중 유형</h2>
+    const { archetype } = data;
+    const info = TYPE_INFO[archetype] || {};
 
-      {/* 이미지 */}
-      <img
-        src="/assets/studytype.png"
-        alt="공부 유형 소개 표"
-        style={{ width: '100%', margin: '20px 0', border: '1px solid #ccc' }}
-      />
+    // 평균 집중도 퍼센트 계산 (소수점 1자리)
+  const avgPercent = (schedule.avg_focus * 100).toFixed(1);
 
-      {/* 유형명 */}
-      <h3 style={{ marginTop: 20 }}>
-        {archetype}번 · {info.name}
-      </h3>
+    // ② JSX는 최상위 하나의 div로 감싸기
+    return (
+        <div style={{ padding: 20, maxWidth: 600, margin: '0 auto' }}>
+            <h2>당신의 집중 유형</h2>
 
-      {/* 설명 */}
-      <p style={{ lineHeight: 1.6 }}>{info.description}</p>
+            {/* 이미지 */}
+            <img
+                src="/assets/studytype.png"
+                alt="공부 유형 소개 표"
+                style={{ width: '100%', margin: '20px 0', border: '1px solid #ccc' }}
+            />
 
-      {/* 맞춤 팁 */}
-      <div style={{
-        background: '#f0f8ff',
-        border: '1px solid #cce',
-        borderRadius: 8,
-        padding: 16,
-        marginTop: 20
-      }}>
-        <strong>맞춤 팁:</strong>
-        <p style={{ margin: '8px 0 0', lineHeight: 1.5 }}>{info.tip}</p>
-      </div>
-    </div>
-  );
+            {/* 유형명 */}
+            <h3 style={{ marginTop: 20 }}>
+                {archetype}번 · {info.name}
+            </h3>
+
+            {/* 설명 */}
+            <p style={{ lineHeight: 1.6 }}>{info.description}</p>
+
+            {/* 맞춤 팁 */}
+            <div style={{
+                background: '#f0f8ff',
+                border: '1px solid #cce',
+                borderRadius: 8,
+                padding: 16,
+                marginTop: 20
+            }}>
+                <strong>맞춤 팁:</strong>
+                <p style={{ margin: '8px 0 0', lineHeight: 1.5 }}>{info.tip}</p>
+            </div>
+
+            {/* ③ 하루 권장 공부·휴식 시간 */}
+            <div style={{
+                background: '#fff8e1',
+                border: '1px solid #ffecb3',
+                borderRadius: 8,
+                padding: 16,
+                marginTop: 30
+            }}>
+                <h3>오늘의 학습 스케줄 추천</h3>
+                <p>평균 집중도: <strong>{avgPercent}%</strong></p>
+                <p>공부 권장 시간: <strong>{schedule.study_min}분</strong></p>
+                <p>휴식 권장 시간: <strong>{schedule.break_min}분</strong></p>
+            </div>
+
+        </div>
+    );
 }

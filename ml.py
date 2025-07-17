@@ -13,6 +13,7 @@ from django.db.models import (
     Case, When, FloatField, Q
 )
 from django.db.models.functions import TruncDate, ExtractHour
+from .ml import get_window_features
 
 from .models import FocusData, SensorData, StudySession
 
@@ -187,4 +188,28 @@ def get_daily_recommendation(user, days=3):
         'study_min': study_min,
         'break_min': break_min,
         'avg_focus': round(avg_focus, 2)
+    }
+
+# ──────────────────────────────────────────────────────────
+# 목적: 사용자의 평소 집중 패턴과 크게 다른 순간을 찾아내어 “요즘 컨디션이 평소와 다릅니다” 같은 통찰을 제공
+
+# 언제: 피드백 페이지를 열었을 때, 최근 세션 중 이상 구간이 있었는지 요약해서 보여줌
+# ──────────────────────────────────────────────────────────
+
+with open(settings.BASE_DIR/'focus'/'models'/'anomaly_svm.pkl','rb') as f:
+    anomaly_clf = pickle.load(f)
+
+def detect_anomalies(user):
+    """
+    윈도우별로 이상치(–1) / 정상(1) 레이블 반환
+    그리고 이상치가 총 몇 %였는지 요약
+    """
+    X = get_window_features(user)            # (T, feat_dim)
+    preds = anomaly_clf.predict(X)           # 1 or -1
+    total = len(preds)
+    n_anom = (preds == -1).sum()
+    return {
+      'anomaly_ratio': round(n_anom/total, 3),
+      'anomaly_windows': int(n_anom),
+      'total_windows': int(total)
     }
