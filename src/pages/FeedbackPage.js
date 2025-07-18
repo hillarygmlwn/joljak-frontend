@@ -1,6 +1,7 @@
 // src/pages/FeedbackPage.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import FeedbackIntro from '../components/FeedbackIntro';
 
 // ① 유형별 이름·설명·팁 매핑
 const TYPE_INFO = {
@@ -74,6 +75,8 @@ export default function FeedbackPage() {
     // ② JSX는 최상위 하나의 div로 감싸기
     return (
         <div style={{ padding: 20, maxWidth: 600, margin: '0 auto' }}>
+            {/* 페이지 기능 소개 */}
+            <FeedbackIntro />
             <h2>당신의 집중 유형</h2>
 
             {/* 이미지 */}
