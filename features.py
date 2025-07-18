@@ -63,3 +63,36 @@ def get_window_features(user, session_id, window_sec=10):
         ])
 
     return np.array(feats, dtype=float)
+
+
+def extract_session_features(user, session_id):
+    """
+    한 세션(session_id)의 윈도우별 피처를 집계하여
+    총 9개(FeatureNames와 일치)의 숫자 배열을 반환합니다.
+    """
+    X = get_window_features(user, session_id)  # shape = (T, 9)
+    # 윈도우가 없으면 0 벡터 반환
+    if X.size == 0:
+        return np.zeros((len(FEATURE_NAMES),), dtype=float)
+
+    total_focus       = float(X[:, 0].mean())            # 윈도우별 avg_focus 평균
+    avg_blink         = float(X[:, 1].mean())            # 윈도우별 sum_blink 평균
+    total_zoning      = float(X[:, 3].sum())             # 윈도우별 sum_zoning 합계
+    total_eyes_closed = float(X[:, 2].sum())             # 윈도우별 sum_eyes_closed 합계
+    hr_var            = float(np.nanvar(X[:, 5]))        # 윈도우별 hr_std 분산
+    pr_var            = float(np.nanvar(X[:, 6]))        # 윈도우별 pressure_std 분산
+    total_writing     = float(X[:, 7].sum())             # 윈도우별 writing_count 합계
+    avg_writing_ratio = float(X[:, 8].mean())            # 윈도우당 글쓰기 비율 평균
+    window_count      = float(X.shape[0])                # 윈도우 개수
+
+    return np.array([
+        total_focus,
+        avg_blink,
+        total_zoning,
+        total_eyes_closed,
+        hr_var,
+        pr_var,
+        total_writing,
+        avg_writing_ratio,
+        window_count
+    ], dtype=float)

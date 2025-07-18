@@ -132,15 +132,7 @@ export default function FeedbackPage() {
                 )}
             </div>
 
-            {/* SHAP 설명 섹션 */}
-            <div className="section shap-list">
-                <h3>세션 성공 기여도 분석</h3>
-                {explain.feature_names.map((f, i) => (
-                    <p key={f}>
-                        {f}: {explain.shap_values[i].toFixed(2)}
-                    </p>
-                ))}
-            </div>
+            
 
         </div>
     );

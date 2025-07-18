@@ -279,7 +279,7 @@ def get_daily_recommendation(user, days=3):
 
 anomaly_clf = _load_anomaly()
 
-def detect_anomalies(user, session_id):
+def detect_anomalies(user, session_id, threshold=0.3):
     """
     윈도우별로 이상치(–1) / 정상(1) 레이블 반환
     그리고 이상치가 총 몇 %였는지 요약
@@ -287,7 +287,11 @@ def detect_anomalies(user, session_id):
     X = get_window_features(user, session_id)            # (T, feat_dim)
     if X.size == 0:
         return {'anomaly_ratio':0.0,'anomaly_windows':0,'total_windows':0}
-    preds = anomaly_clf.predict(X)           # 1 or -1
+    
+    # focus_score 칼럼(예: 0번 인덱스) 기준으로 threshold 미만만 이상치로
+    focus_scores = X[:, 0]  # X[:, FEATURE_NAMES.index('total_focus')] 이면 더 명시적
+    preds = np.where(focus_scores < threshold, -1, 1)
+
     total = len(preds)
     n_anom = (preds == -1).sum()
     return {
