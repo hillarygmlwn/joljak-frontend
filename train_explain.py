@@ -11,7 +11,7 @@ def main():
     # 1) 세션별 피처/라벨 데이터 모으기
     X, y = [], []
     for sess in SessionResult.objects.all():
-        feats = extract_session_features(sess.user, sess.date)
+        feats = extract_session_features(sess.user, sess.id)
         X.append(feats)
         y.append(sess.success_score)  # 혹은 session_length
 

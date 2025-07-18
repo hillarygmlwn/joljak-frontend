@@ -1,105 +1,80 @@
 # focus/ml.py
-
+# 최상단에 이렇게 한 번만
 import pickle
 import numpy as np
+import shap
 import torch
-from datetime import date, timedelta
-from .rl_model import PolicyNet
-from .ml import get_last_n_days_summary
-from django.conf import settings
-from django.db import models
-from django.db.models import (
-    Avg, Min, Max, Sum, StdDev,
-    Case, When, FloatField, Q
-)
-from django.db.models.functions import TruncDate, ExtractHour
-from .ml import get_window_features
 
+from datetime import date, timedelta
+from django.conf import settings
+from django.utils import timezone
+from django.db import models
+from django.db.models import Avg, Sum, Min, Max, Case, When, FloatField, Count
+from django.db.models.functions import TruncDate, ExtractHour
+
+from .rl_model import PolicyNet
+from .features import get_window_features, extract_session_features
 from .models import FocusData, SensorData, StudySession
 
+
+
+FEATURE_NAMES = [
+    'total_focus',
+    'avg_blink',
+    'total_zoning',
+    'total_eyes_closed',
+    'hr_var',
+    'pr_var',
+    'total_writing',
+    'avg_writing_ratio',
+    'window_count',
+]
+
+# 1) 60일 전 날짜 계산
+cutoff = timezone.now() - timedelta(days=60)
+# 2) 지난 60일 동안 끝난(종료된) 세션만
+recent_sessions = StudySession.objects.filter(
+    end_at__isnull=False,
+    end_at__gte=cutoff
+).order_by('-end_at')  # 최신 순
+
+# 3) (user, session_id) 튜플 리스트로 변환
+#    sample_sessions 라는 이름으로 전역에 둡니다.
+sample_sessions = [
+    (sess.user, sess.id)
+    for sess in recent_sessions
+]
+
+# 모델 로드
+with open(settings.BASE_DIR/'focus'/'models'/'explain_model.pkl','rb') as f:
+    explain_model = pickle.load(f)
+
+# 배경 데이터: 한번만 계산
+background = np.vstack([
+    extract_session_features(user, session_id)
+    for user, session_id in sample_sessions
+])
+explainer = shap.TreeExplainer(explain_model, data=background)
+
 # ──────────────────────────────────────────────────────────
-# 윈도우 피쳐(10초단위), 세션피쳐(한세션 단위) 계산 추가
+# SHAP/LIME 으로 피처 중요도 개인화
+#목적: “어떤 피처가 내 세션 성패에 가장 큰 영향을 줬을까?” 를 설명
+#언제: 피드백 페이지 ‘피처 중요도’ 섹션에 하루·최근 세션 단위로 보여줌
 # ──────────────────────────────────────────────────────────
 
-def get_window_features(user, session_id, window_sec=10):
+
+def compute_shap(user, session_id):
     """
-    각 윈도우에 다음 피처 추가:
-      - writing_time: pressure>0로 기록된 개수  (샘플 개수 대신 시간으로 환산해도 좋아요)
-      - writing_ratio: pressure>0 비율
+    주어진 user, session_id 세션에 대해
+    shap values와 feature names 반환
     """
-    qs = (
-        SensorData.objects.filter(user=user, session_id=session_id)
-        .annotate(win=Trunc('timestamp', f'{window_sec}s'))
-        .values('win')
-        .annotate(
-            avg_focus=Avg('focus_data__focus_score'),
-            sum_blink=Sum('focus_data__blink_count'),
-            sum_eyes_closed=Sum('focus_data__eyes_closed_time'),
-            sum_zoning=Sum('focus_data__zoning_out_time'),
-            present_ratio=Avg(
-                Case(
-                    When(focus_data__present=True, then=1),
-                    default=0,
-                    output_field=FloatField()
-                )
-            ),
-            hr_std=StdDev('heart_rate'),
-            pressure_std=StdDev('pressure'),
+    x = extract_session_features(user, session_id).reshape(1, -1)
+    shap_vals = explainer.shap_values(x)[0]  # (feat_dim,)
+    return {
+        'feature_names': FEATURE_NAMES,
+        'shap_values':   shap_vals.tolist()
+    }
 
-            # 필기 관련 피처
-            writing_count=Count(
-                Case(
-                  When(pressure__gt=0, then=1),
-                  output_field=FloatField()
-                )
-            ),
-            total_count=Count('id'),
-        )
-        .order_by('win')
-    )
-
-    feats = []
-    for row in qs:
-        n = row['total_count'] or 1
-        writing_count = row['writing_count'] or 0
-        feats.append([
-            row['avg_focus'] or 0.0,
-            row['sum_blink'] or 0,
-            row['sum_eyes_closed'] or 0.0,
-            row['sum_zoning'] or 0.0,
-            row['present_ratio'] or 0.0,
-            row['hr_std'] or 0.0,
-            row['pressure_std'] or 0.0,
-            writing_count,                  # 필기 횟수(샘플 개수)
-            writing_count / n               # 필기 비율
-        ])
-    return np.array(feats, dtype=float)
-
-def extract_session_features(user, session_id):
-    X = get_window_features(user, session_id)
-    if X.size == 0:
-        return np.zeros(9, dtype=float)
-
-    total_focus       = X[:,0].sum()
-    avg_blink         = X[:,1].mean()
-    total_zoning      = X[:,3].sum()
-    total_eyes_closed = X[:,2].sum()
-    hr_var            = float(np.var(X[:,5]))
-    pr_var            = float(np.var(X[:,6]))
-    total_writing     = X[:,7].sum()          # 전체 필기 샘플 수
-    avg_writing_ratio = float(X[:,8].mean())  # 윈도우당 평균 필기 비율
-
-    return np.array([
-        total_focus,
-        avg_blink,
-        total_zoning,
-        total_eyes_closed,
-        hr_var,
-        pr_var,
-        total_writing,
-        avg_writing_ratio,
-        X.shape[0]
-    ], dtype=float)
 
 # ──────────────────────────────────────────────────────────
 # 1) 미리 학습해 둔 KMeans 모델 불러오기
@@ -283,12 +258,14 @@ def get_daily_recommendation(user, days=3):
 with open(settings.BASE_DIR/'focus'/'models'/'anomaly_svm.pkl','rb') as f:
     anomaly_clf = pickle.load(f)
 
-def detect_anomalies(user):
+def detect_anomalies(user, session_id):
     """
     윈도우별로 이상치(–1) / 정상(1) 레이블 반환
     그리고 이상치가 총 몇 %였는지 요약
     """
-    X = get_window_features(user)            # (T, feat_dim)
+    X = get_window_features(user, session_id)            # (T, feat_dim)
+    if X.size == 0:
+        return {'anomaly_ratio':0.0,'anomaly_windows':0,'total_windows':0}
     preds = anomaly_clf.predict(X)           # 1 or -1
     total = len(preds)
     n_anom = (preds == -1).sum()
@@ -298,28 +275,6 @@ def detect_anomalies(user):
       'total_windows': int(total)
     }
 
-# ──────────────────────────────────────────────────────────
-# SHAP/LIME 으로 피처 중요도 개인화
-#목적: “어떤 피처가 내 세션 성패에 가장 큰 영향을 줬을까?” 를 설명
-#언제: 피드백 페이지 ‘피처 중요도’ 섹션에 하루·최근 세션 단위로 보여줌
-# ──────────────────────────────────────────────────────────
 
-with open(settings.BASE_DIR/'focus'/'models'/'explain_model.pkl','rb') as f:
-    explain_model = pickle.load(f)
 
-# 배경값: 과거 여러 세션 샘플
-background = np.vstack([ extract_session_features(u, d) 
-                         for u,d in sample_sessions ])
-explainer = shap.TreeExplainer(explain_model, data=background)
 
-def compute_shap(user, date):
-    """
-    주어진 세션(user,date)에 대해
-    피처 중요도(shap values)와 피처 이름 반환
-    """
-    x = extract_session_features(user, date).reshape(1,-1)
-    shap_vals = explainer.shap_values(x)[0]   # (feat_dim,)
-    return {
-      'feature_names': FEATURE_NAMES,         # 정해둔 리스트
-      'shap_values': shap_vals.tolist()
-    }

@@ -11,8 +11,7 @@ import django
 django.setup()
 
 from django.conf import settings
-from focus.models import FocusData, SensorData
-from focus.ml import extract_user_features  # 위에서 만든 함수
+from focus.ml import extract_user_features
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 

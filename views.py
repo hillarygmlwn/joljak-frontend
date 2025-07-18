@@ -4,6 +4,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .ml import predict_archetype
+from .ml import (
+    predict_archetype,
+    get_daily_recommendation,
+    detect_anomalies,
+    compute_shap
+)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -32,10 +38,12 @@ def anomaly_view(request):
     res = detect_anomalies(request.user)
     return Response(res)
 
-# focus/views.py
+# SHAP/LIME 으로 피처 중요도 개인화
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def explain_view(request):
-    date = request.GET.get('date')   # YYYY-MM-DD
-    res = compute_shap(request.user, date)
+    session_id = request.GET.get('session_id')
+    if not session_id:
+        return Response({'error':'session_id required'}, status=400)
+    res = compute_shap(request.user, session_id)
     return Response(res)
