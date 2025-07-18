@@ -1,0 +1,73 @@
+/* src/pages/FeedbackPage.css */
+
+/* 전체 래퍼 */
+.feedback-page {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  background: #f0f8ff;           /* 연한 블루 백그라운드 */
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,128,0.1);
+}
+
+/* 소개 섹션 */
+.feedback-intro {
+  background: #d0e7ff;
+  border: 1px solid #a0cfff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  color: #003366;
+}
+
+/* 제목 */
+.feedback-page h2 {
+  color: #0055aa;
+  margin-bottom: 16px;
+}
+
+/* 유형 카드 */
+.feedback-page img {
+  display: block;
+  width: 100%;
+  border: 2px solid #cce5ff;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+/* 팁 박스 */
+.tip-box {
+  background: #e6f2ff;
+  border: 1px solid #99ccff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 20px;
+  color: #004080;
+}
+
+/* 추천 스케줄 */
+.schedule-box {
+  background: #eef7ff;
+  border: 1px solid #b3daff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 30px;
+  color: #004080;
+}
+
+/* 섹션 헤더 */
+.section h3 {
+  color: #004c99;
+  margin-bottom: 8px;
+}
+
+/* 이상치 경고 */
+.section .warning {
+  color: #b30000;  /* 진한 빨강 */
+}
+
+/* SHAP 리스트 */
+.shap-list p {
+  margin: 4px 0;
+  color: #002244;
+}

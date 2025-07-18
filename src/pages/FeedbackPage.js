@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import FeedbackIntro from '../components/FeedbackIntro';
+import './FeedbackPage.css';
+
 
 // ① 유형별 이름·설명·팁 매핑
 const TYPE_INFO = {
@@ -74,7 +76,7 @@ export default function FeedbackPage() {
 
     // ② JSX는 최상위 하나의 div로 감싸기
     return (
-        <div style={{ padding: 20, maxWidth: 600, margin: '0 auto' }}>
+        <div className="feedback-page">
             {/* 페이지 기능 소개 */}
             <FeedbackIntro />
             <h2>당신의 집중 유형</h2>
@@ -95,25 +97,13 @@ export default function FeedbackPage() {
             <p style={{ lineHeight: 1.6 }}>{info.description}</p>
 
             {/* 맞춤 팁 */}
-            <div style={{
-                background: '#f0f8ff',
-                border: '1px solid #cce',
-                borderRadius: 8,
-                padding: 16,
-                marginTop: 20
-            }}>
+            <div className="tip-box">
                 <strong>맞춤 팁:</strong>
                 <p style={{ margin: '8px 0 0', lineHeight: 1.5 }}>{info.tip}</p>
             </div>
 
             {/* ③ 하루 권장 공부·휴식 시간 */}
-            <div style={{
-                background: '#fff8e1',
-                border: '1px solid #ffecb3',
-                borderRadius: 8,
-                padding: 16,
-                marginTop: 30
-            }}>
+            <div className="schedule-box">
                 <h3>오늘의 학습 스케줄 추천</h3>
                 <p>평균 집중도: <strong>{avgPercent}%</strong></p>
                 <p>공부 권장 시간: <strong>{schedule.study_min}분</strong></p>
@@ -125,14 +115,14 @@ export default function FeedbackPage() {
                 <h3>최근 집중 패턴 분석</h3>
                 <p>이상 집중 구간: {anomaly.anomaly_windows}/{anomaly.total_windows} ({(anomaly.anomaly_ratio * 100).toFixed(1)}%)</p>
                 {anomaly.anomaly_ratio > 0.1 && (
-                    <p style={{ color: 'crimson' }}>
+                    <p className="warning">
                         평소와 다른 집중 패턴이 자주 관찰됩니다. 컨디션을 점검해 보세요.
                     </p>
                 )}
             </div>
 
             {/* SHAP 설명 섹션 */}
-            <div className="section">
+            <div className="section shap-list">
                 <h3>세션 성공 기여도 분석</h3>
                 {explain.feature_names.map((f, i) => (
                     <p key={f}>
