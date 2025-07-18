@@ -54,7 +54,7 @@ export default function FeedbackPage() {
 
 
         Promise.all([archetypeReq, scheduleReq, anomalyReq, explainReq])
-            .then(([archetypeRes, scheduleRes, anomalyReq, explainReq]) => {
+            .then(([archetypeRes, scheduleRes, anomalyRes, explainRes]) => {
                 setData(archetypeRes.data);
                 setSchedule(scheduleRes.data);
                 setAnomaly(anomalyRes.data);
