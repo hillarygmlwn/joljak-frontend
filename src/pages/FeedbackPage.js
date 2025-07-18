@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import FeedbackIntro from '../components/FeedbackIntro';
 import './FeedbackPage.css';
+import studyTypeImg from '../assets/studytype.png';
 
 
 // ① 유형별 이름·설명·팁 매핑
@@ -93,7 +94,7 @@ export default function FeedbackPage() {
 
             {/* 이미지 */}
             <img
-                src="/assets/studytype.png"
+                src={studyTypeImg}
                 alt="공부 유형 소개 표"
                 style={{ width: '100%', margin: '20px 0', border: '1px solid #ccc' }}
             />
