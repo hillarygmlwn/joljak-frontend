@@ -55,10 +55,10 @@ export default function FeedbackPage() {
                     axios.get('/focus/archetype/', { headers }),
                     axios.get('/focus/daily-schedule/', { headers }),
                     axios
-                        .get('/focus/anomaly/', { headers, params: { session_id } })
+                        .get('/focus/anomaly/', { headers, params: { session_id: sessionId } })
                         .catch(() => ({ data: { anomaly_ratio: 0, anomaly_windows: 0, total_windows: 0 } })),
                     axios
-                        .get('/focus/explain/', { headers, params: { session_id } })
+                        .get('/focus/explain/', { headers, params: { session_id: sessionId } })
                         .catch(() => ({ data: { feature_names: [], shap_values: [] } })),
                 ]);
             })
