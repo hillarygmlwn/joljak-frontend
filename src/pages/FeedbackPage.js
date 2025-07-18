@@ -29,6 +29,8 @@ const TYPE_INFO = {
 export default function FeedbackPage() {
     const [data, setData] = useState(null);
     const [schedule, setSchedule] = useState(null);
+    const [anomaly, setAnomaly] = useState(null);
+    const [explain, setExplain] = useState(null);
 
     useEffect(() => {
         // ② 아키타입과 daily-schedule을 병렬 호출
@@ -39,16 +41,29 @@ export default function FeedbackPage() {
         const scheduleReq = axios.get('/focus/daily-schedule/', {
             headers: { Authorization: `Token ${token}` }
         });
+        // 현재 활성 세션 ID가 필요합니다. 저장해 두셨다면 불러오세요.
+        const sessionId = localStorage.getItem('session_id');
+        const anomalyReq = axios.get('/focus/anomaly/', {
+            headers: { Authorization: `Token ${token}` },
+            params: { session_id: sessionId }
+        });
+        const explainReq = axios.get('/focus/explain/', {
+            headers: { Authorization: `Token ${token}` },
+            params: { session_id: sessionId }
+        });
 
-        Promise.all([archetypeReq, scheduleReq])
-            .then(([archetypeRes, scheduleRes]) => {
+
+        Promise.all([archetypeReq, scheduleReq, anomalyReq, explainReq])
+            .then(([archetypeRes, scheduleRes, anomalyReq, explainReq]) => {
                 setData(archetypeRes.data);
                 setSchedule(scheduleRes.data);
+                setAnomaly(anomalyRes.data);
+                setExplain(explainRes.data);
             })
             .catch(console.error);
     }, []);
 
-    if (!data || !schedule) return <p>로딩 중…</p>;
+    if (!data || !schedule || !anomaly || !explain) return <p>로딩 중…</p>;
 
     const { archetype } = data;
     const info = TYPE_INFO[archetype] || {};
@@ -105,7 +120,7 @@ export default function FeedbackPage() {
             {/* 이상치 섹션 */}
             <div className="section">
                 <h3>최근 집중 패턴 분석</h3>
-                <p>이상 집중 구간: {anomaly.anomaly_windows}/{anomaly.total_windows} ({anomaly.anomaly_ratio * 100}%)</p>
+                <p>이상 집중 구간: {anomaly.anomaly_windows}/{anomaly.total_windows} ({(anomaly.anomaly_ratio * 100).toFixed(1)}%)</p>
                 {anomaly.anomaly_ratio > 0.1 && (
                     <p style={{ color: 'crimson' }}>
                         평소와 다른 집중 패턴이 자주 관찰됩니다. 컨디션을 점검해 보세요.
