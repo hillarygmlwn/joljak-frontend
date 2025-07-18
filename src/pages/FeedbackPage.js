@@ -40,24 +40,22 @@ export default function FeedbackPage() {
         const token = localStorage.getItem('token');
         const headers = { Authorization: `Token ${token}` };
 
-        // 1) 먼저 '현재 활성 세션' 을 받아서 session_id 로 저장
-        axios.get('/focus/current-session/', { headers })
-            .then(({ data }) => {
-                const { session_id } = data;
-                localStorage.setItem('session_id', session_id);
+        // 1) localStorage에서 session_id 꺼내기
+        const sessionId = localStorage.getItem('session_id');
+        if (!sessionId) {
+            console.warn('session_id가 없습니다. 먼저 공부를 시작해 주세요.');
+            return;
+        }
 
-                // 2) 이제 4개의 API를 병렬 호출
-                const archetypeReq = axios.get('/focus/archetype/', { headers });
-                const scheduleReq = axios.get('/focus/daily-schedule/', { headers });
-                const anomalyReq = axios
-                    .get('/focus/anomaly/', { headers, params: { session_id } })
-                    .catch(() => ({ data: { anomaly_ratio: 0, anomaly_windows: 0, total_windows: 0 } }));
-                const explainReq = axios
-                    .get('/focus/explain/', { headers, params: { session_id } })
-                    .catch(() => ({ data: { feature_names: [], shap_values: [] } }));
-
-                return Promise.all([archetypeReq, scheduleReq, anomalyReq, explainReq]);
-            })
+        // 2) 네 개의 API를 병렬 호출
+        Promise.all([
+            axios.get('/focus/archetype/', { headers }),
+            axios.get('/focus/daily-schedule/', { headers }),
+            axios.get('/focus/anomaly/', { headers, params: { session_id: sessionId } })
+                .catch(() => ({ data: { anomaly_ratio: 0, anomaly_windows: 0, total_windows: 0 } })),
+            axios.get('/focus/explain/', { headers, params: { session_id: sessionId } })
+                .catch(() => ({ data: { feature_names: [], shap_values: [] } })),
+        ])
             .then(([aRes, sRes, anRes, exRes]) => {
                 setData(aRes.data);
                 setSchedule(sRes.data);
@@ -67,6 +65,7 @@ export default function FeedbackPage() {
             .catch(err => {
                 console.error('데이터 로딩 실패', err);
             });
+
     }, []);
 
     // 로딩 핸들링
