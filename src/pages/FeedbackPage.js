@@ -54,10 +54,10 @@ export default function FeedbackPage() {
                     axios.get('/focus/archetype/', { headers }),
                     axios.get('/focus/daily-schedule/', { headers }),
                     axios
-                        .get('/focus/anomaly/', { headers, params: { sessionId } })
+                        .get('/focus/anomaly/', { headers, params: { session_id } })
                         .catch(() => ({ data: { anomaly_ratio: 0, anomaly_windows: 0, total_windows: 0 } })),
                     axios
-                        .get('/focus/explain/', { headers, params: { sessionId } })
+                        .get('/focus/explain/', { headers, params: { session_id } })
                         .catch(() => ({ data: { feature_names: [], shap_values: [] } })),
                 ]);
             })
@@ -80,7 +80,7 @@ export default function FeedbackPage() {
 
     const { archetype } = data;
     const info = TYPE_INFO[archetype] || {};
-    const avgPercent = (schedule.avg_focus * 100).toFixed(1);
+    const avgPercent = (schedule.avg_focus).toFixed(1);
 
 
 
