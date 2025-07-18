@@ -29,16 +29,34 @@ def gather_all_features(days=7):
         features.append(vec)
     return np.vstack(features)
 
-def find_best_k(X, k_range=range(2, 8)):
-    best_k, best_score = 2, -1
-    for k in k_range:
+def find_best_k(X, max_k=8):
+    from sklearn.metrics import silhouette_score
+    import numpy as np
+
+    n_samples = X.shape[0]
+    # k는 2부터 min(max_k, n_samples - 1) 까지만 시도
+    upper = min(max_k, n_samples - 1)
+    best_k, best_score = None, -1
+
+    for k in range(2, upper + 1):
         km = KMeans(n_clusters=k, random_state=42)
         labels = km.fit_predict(X)
+        unique_labels = np.unique(labels)
+        if len(unique_labels) < 2:
+            print(f"K={k}, only one cluster found; skipping silhouette")
+            continue
         score = silhouette_score(X, labels)
         print(f"K={k}, silhouette={score:.3f}")
         if score > best_score:
             best_k, best_score = k, score
+
+    if best_k is None:
+        # 유효한 k를 찾지 못했으면 기본값 설정
+        best_k = 2 if n_samples >= 2 else 1
+        print(f"No valid k found; defaulting best_k={best_k}")
+
     return best_k
+
 
 def main():
     # 1) 데이터 준비

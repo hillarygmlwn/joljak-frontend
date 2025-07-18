@@ -2,8 +2,6 @@
 # 최상단에 이렇게 한 번만
 import pickle
 import numpy as np
-import shap
-import torch
 
 from datetime import date, timedelta
 from django.conf import settings
@@ -12,10 +10,37 @@ from django.db import models
 from django.db.models import Avg, Sum, Min, Max, Case, When, FloatField, Count
 from django.db.models.functions import TruncDate, ExtractHour
 
-from .rl_model import PolicyNet
+
 from .features import get_window_features, extract_session_features
 from .models import FocusData, SensorData, StudySession
 
+# Lazy loader 전역 변수
+__kmeans = None
+__explainer = None
+_policy = None
+_anomaly = None
+
+
+
+def _load_anomaly():
+    global _anomaly
+    if _anomaly is None:
+        try:
+            path = settings.BASE_DIR / 'focus' / 'models' / 'anomaly_svm.pkl'
+            with open(path, 'rb') as f:
+                _anomaly = pickle.load(f)
+        except FileNotFoundError:
+            _anomaly = None
+    return _anomaly
+
+
+def _load_kmeans():
+    global __kmeans
+    if __kmeans is None:
+        path = settings.BASE_DIR / 'focus' / 'models' / 'kmeans_archetype.pkl'
+        with open(path, 'rb') as f:
+            __kmeans = pickle.load(f)
+    return __kmeans
 
 
 FEATURE_NAMES = [
@@ -45,16 +70,9 @@ sample_sessions = [
     for sess in recent_sessions
 ]
 
-# 모델 로드
-with open(settings.BASE_DIR/'focus'/'models'/'explain_model.pkl','rb') as f:
-    explain_model = pickle.load(f)
 
-# 배경 데이터: 한번만 계산
-background = np.vstack([
-    extract_session_features(user, session_id)
-    for user, session_id in sample_sessions
-])
-explainer = shap.TreeExplainer(explain_model, data=background)
+
+
 
 # ──────────────────────────────────────────────────────────
 # SHAP/LIME 으로 피처 중요도 개인화
@@ -64,24 +82,27 @@ explainer = shap.TreeExplainer(explain_model, data=background)
 
 
 def compute_shap(user, session_id):
-    """
-    주어진 user, session_id 세션에 대해
-    shap values와 feature names 반환
-    """
+    global __explainer
+    if __explainer is None:
+        import shap
+        # 모델 로드
+        with open(settings.BASE_DIR/'focus'/'models'/'explain_model.pkl','rb') as f:
+            explain_model = pickle.load(f)
+        # background 생성
+        from .models import StudySession
+        cutoff = timezone.now() - timedelta(days=60)
+        recent = StudySession.objects.filter(end_at__gte=cutoff, end_at__isnull=False)
+        bg = np.vstack([
+            extract_session_features(s.user, s.id) for s in recent
+        ]) if recent else np.zeros((1, len(FEATURE_NAMES)))
+        __explainer = shap.TreeExplainer(explain_model, data=bg)
+
     x = extract_session_features(user, session_id).reshape(1, -1)
-    shap_vals = explainer.shap_values(x)[0]  # (feat_dim,)
-    return {
-        'feature_names': FEATURE_NAMES,
-        'shap_values':   shap_vals.tolist()
-    }
+    vals = __explainer.shap_values(x)[0]
+    return {'feature_names': FEATURE_NAMES, 'shap_values': vals.tolist()}
 
 
-# ──────────────────────────────────────────────────────────
-# 1) 미리 학습해 둔 KMeans 모델 불러오기
-# ──────────────────────────────────────────────────────────
-MODEL_PATH = settings.BASE_DIR / 'focus' / 'models' / 'kmeans_archetype.pkl'
-with open(MODEL_PATH, 'rb') as f:
-    kmeans_model = pickle.load(f)
+
 
 
 # ──────────────────────────────────────────────────────────
@@ -196,8 +217,12 @@ def extract_user_features(user, days=7):
 # 4) 예측 함수는 그대로
 # ──────────────────────────────────────────────────────────
 def predict_archetype(user):
+    model = _load_kmeans()
+    if model is None:
+        # 아직 학습 모델이 없을 땐 기본값 리턴(예: 0)
+        return 0
     features = extract_user_features(user)
-    label = kmeans_model.predict(features)[0]
+    label = model.predict(features)[0]
     return int(label)
 
 # ──────────────────────────────────────────────────────────
@@ -208,10 +233,7 @@ def predict_archetype(user):
 STATE_DIM = 8     # 예시: extract_user_features에서 쓰는 피처 개수
 MODEL_PATH = settings.BASE_DIR / 'focus' / 'models' / 'policy_net.pkl'
 
-policy = PolicyNet(STATE_DIM)
-with open(MODEL_PATH, 'rb') as f:
-    policy.load_state_dict(pickle.load(f))
-policy.eval()
+
 
 def get_daily_recommendation(user, days=3):
     """
@@ -224,11 +246,11 @@ def get_daily_recommendation(user, days=3):
     #    과거 days일의 focus_score를 모아서 배열로 만듭니다.
     daily = get_last_n_days_summary(user, days=days)
     # focus_score가 [0~1] 정규화돼 있다고 가정
-    seq = torch.tensor([ d['focus_score'] for d in daily ], dtype=torch.float32)
+    focus_arr = np.array([d['focus_score'] for d in daily], dtype=float)
 
     # 2) policy에게 하루치 상태(state)를 한번만 넘겨서 액션을 구분합니다.
     #    (여기선 단순히 평균 집중도로 판단해서, 평균이 낮으면 짧게, 높으면 길게)
-    avg_focus = seq.mean().item()
+    avg_focus = float(focus_arr.mean())
 
     # 임계치(threshold)에 비해 평균 집중도가 높으면 더 오래, 낮으면 짧게 권장
     # 예시: 평균 ≥ 0.8 → 50분, 0.6~0.8 → 40분, 0.4~0.6 → 30분, 그 이하 → 20분
@@ -241,7 +263,7 @@ def get_daily_recommendation(user, days=3):
     else:
         study_min = 20
 
-    break_min = 2  # 휴식은 2분으로 고정
+    break_min = 5  # 휴식은 5분으로 고정
 
     return {
         'study_min': study_min,
@@ -255,8 +277,7 @@ def get_daily_recommendation(user, days=3):
 # 언제: 피드백 페이지를 열었을 때, 최근 세션 중 이상 구간이 있었는지 요약해서 보여줌
 # ──────────────────────────────────────────────────────────
 
-with open(settings.BASE_DIR/'focus'/'models'/'anomaly_svm.pkl','rb') as f:
-    anomaly_clf = pickle.load(f)
+anomaly_clf = _load_anomaly()
 
 def detect_anomalies(user, session_id):
     """

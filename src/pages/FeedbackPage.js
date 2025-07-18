@@ -38,41 +38,47 @@ export default function FeedbackPage() {
     useEffect(() => {
         // ② 아키타입과 daily-schedule을 병렬 호출
         const token = localStorage.getItem('token');
-        const archetypeReq = axios.get('/focus/archetype/', {
-            headers: { Authorization: `Token ${token}` }
-        });
-        const scheduleReq = axios.get('/focus/daily-schedule/', {
-            headers: { Authorization: `Token ${token}` }
-        });
-        // 현재 활성 세션 ID가 필요합니다. 저장해 두셨다면 불러오세요.
-        const sessionId = localStorage.getItem('session_id');
-        const anomalyReq = axios.get('/focus/anomaly/', {
-            headers: { Authorization: `Token ${token}` },
-            params: { session_id: sessionId }
-        });
-        const explainReq = axios.get('/focus/explain/', {
-            headers: { Authorization: `Token ${token}` },
-            params: { session_id: sessionId }
-        });
+        const headers = { Authorization: `Token ${token}` };
 
+        // 1) 먼저 '현재 활성 세션' 을 받아서 session_id 로 저장
+        axios.get('/focus/current-session/', { headers })
+            .then(({ data }) => {
+                const { session_id } = data;
+                localStorage.setItem('session_id', session_id);
 
-        Promise.all([archetypeReq, scheduleReq, anomalyReq, explainReq])
-            .then(([archetypeRes, scheduleRes, anomalyRes, explainRes]) => {
-                setData(archetypeRes.data);
-                setSchedule(scheduleRes.data);
-                setAnomaly(anomalyRes.data);
-                setExplain(explainRes.data);
+                // 2) 이제 4개의 API를 병렬 호출
+                const archetypeReq = axios.get('/focus/archetype/', { headers });
+                const scheduleReq = axios.get('/focus/daily-schedule/', { headers });
+                const anomalyReq = axios
+                    .get('/focus/anomaly/', { headers, params: { session_id } })
+                    .catch(() => ({ data: { anomaly_ratio: 0, anomaly_windows: 0, total_windows: 0 } }));
+                const explainReq = axios
+                    .get('/focus/explain/', { headers, params: { session_id } })
+                    .catch(() => ({ data: { feature_names: [], shap_values: [] } }));
+
+                return Promise.all([archetypeReq, scheduleReq, anomalyReq, explainReq]);
             })
-            .catch(console.error);
+            .then(([aRes, sRes, anRes, exRes]) => {
+                setData(aRes.data);
+                setSchedule(sRes.data);
+                setAnomaly(anRes.data);
+                setExplain(exRes.data);
+            })
+            .catch(err => {
+                console.error('데이터 로딩 실패', err);
+            });
     }, []);
 
-    if (!data || !schedule || !anomaly || !explain) return <p>로딩 중…</p>;
+    // 로딩 핸들링
+    if (!data || !schedule || !anomaly || !explain) {
+        return <p>로딩 중…</p>;
+    }
 
     const { archetype } = data;
     const info = TYPE_INFO[archetype] || {};
-
-    // 평균 집중도 퍼센트 계산 (소수점 1자리)
     const avgPercent = (schedule.avg_focus * 100).toFixed(1);
+
+
 
     // ② JSX는 최상위 하나의 div로 감싸기
     return (

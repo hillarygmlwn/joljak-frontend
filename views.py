@@ -35,8 +35,19 @@ def daily_schedule_view(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def anomaly_view(request):
-    res = detect_anomalies(request.user)
+    session_id = request.query_params.get('session_id')
+    if not session_id:
+        return Response({'error': 'session_id 파라미터가 필요합니다.'},
+                        status=status.HTTP_400_BAD_REQUEST)
+    try:
+        sid = int(session_id)
+    except ValueError:
+        return Response({'error': 'session_id는 정수여야 합니다.'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    res = detect_anomalies(request.user, sid)
     return Response(res)
+
 
 # SHAP/LIME 으로 피처 중요도 개인화
 @api_view(['GET'])

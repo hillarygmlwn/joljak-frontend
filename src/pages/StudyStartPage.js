@@ -1,4 +1,4 @@
-// ✅ StudyStartPage.js 수정 버전
+// StudyStartPage.js 수정 버전
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -29,7 +29,7 @@ function StudyStartPage() {
         return;
       }
 
-      // ✅ 세션 ID 저장
+      // 세션 ID 저장
       localStorage.setItem("session_id", data.session_id);
       navigate('/study');
     } catch (err) {
