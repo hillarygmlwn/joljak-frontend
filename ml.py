@@ -18,6 +18,90 @@ from .ml import get_window_features
 from .models import FocusData, SensorData, StudySession
 
 # ──────────────────────────────────────────────────────────
+# 윈도우 피쳐(10초단위), 세션피쳐(한세션 단위) 계산 추가
+# ──────────────────────────────────────────────────────────
+
+def get_window_features(user, session_id, window_sec=10):
+    """
+    각 윈도우에 다음 피처 추가:
+      - writing_time: pressure>0로 기록된 개수  (샘플 개수 대신 시간으로 환산해도 좋아요)
+      - writing_ratio: pressure>0 비율
+    """
+    qs = (
+        SensorData.objects.filter(user=user, session_id=session_id)
+        .annotate(win=Trunc('timestamp', f'{window_sec}s'))
+        .values('win')
+        .annotate(
+            avg_focus=Avg('focus_data__focus_score'),
+            sum_blink=Sum('focus_data__blink_count'),
+            sum_eyes_closed=Sum('focus_data__eyes_closed_time'),
+            sum_zoning=Sum('focus_data__zoning_out_time'),
+            present_ratio=Avg(
+                Case(
+                    When(focus_data__present=True, then=1),
+                    default=0,
+                    output_field=FloatField()
+                )
+            ),
+            hr_std=StdDev('heart_rate'),
+            pressure_std=StdDev('pressure'),
+
+            # 필기 관련 피처
+            writing_count=Count(
+                Case(
+                  When(pressure__gt=0, then=1),
+                  output_field=FloatField()
+                )
+            ),
+            total_count=Count('id'),
+        )
+        .order_by('win')
+    )
+
+    feats = []
+    for row in qs:
+        n = row['total_count'] or 1
+        writing_count = row['writing_count'] or 0
+        feats.append([
+            row['avg_focus'] or 0.0,
+            row['sum_blink'] or 0,
+            row['sum_eyes_closed'] or 0.0,
+            row['sum_zoning'] or 0.0,
+            row['present_ratio'] or 0.0,
+            row['hr_std'] or 0.0,
+            row['pressure_std'] or 0.0,
+            writing_count,                  # 필기 횟수(샘플 개수)
+            writing_count / n               # 필기 비율
+        ])
+    return np.array(feats, dtype=float)
+
+def extract_session_features(user, session_id):
+    X = get_window_features(user, session_id)
+    if X.size == 0:
+        return np.zeros(9, dtype=float)
+
+    total_focus       = X[:,0].sum()
+    avg_blink         = X[:,1].mean()
+    total_zoning      = X[:,3].sum()
+    total_eyes_closed = X[:,2].sum()
+    hr_var            = float(np.var(X[:,5]))
+    pr_var            = float(np.var(X[:,6]))
+    total_writing     = X[:,7].sum()          # 전체 필기 샘플 수
+    avg_writing_ratio = float(X[:,8].mean())  # 윈도우당 평균 필기 비율
+
+    return np.array([
+        total_focus,
+        avg_blink,
+        total_zoning,
+        total_eyes_closed,
+        hr_var,
+        pr_var,
+        total_writing,
+        avg_writing_ratio,
+        X.shape[0]
+    ], dtype=float)
+
+# ──────────────────────────────────────────────────────────
 # 1) 미리 학습해 둔 KMeans 모델 불러오기
 # ──────────────────────────────────────────────────────────
 MODEL_PATH = settings.BASE_DIR / 'focus' / 'models' / 'kmeans_archetype.pkl'
@@ -212,4 +296,30 @@ def detect_anomalies(user):
       'anomaly_ratio': round(n_anom/total, 3),
       'anomaly_windows': int(n_anom),
       'total_windows': int(total)
+    }
+
+# ──────────────────────────────────────────────────────────
+# SHAP/LIME 으로 피처 중요도 개인화
+#목적: “어떤 피처가 내 세션 성패에 가장 큰 영향을 줬을까?” 를 설명
+#언제: 피드백 페이지 ‘피처 중요도’ 섹션에 하루·최근 세션 단위로 보여줌
+# ──────────────────────────────────────────────────────────
+
+with open(settings.BASE_DIR/'focus'/'models'/'explain_model.pkl','rb') as f:
+    explain_model = pickle.load(f)
+
+# 배경값: 과거 여러 세션 샘플
+background = np.vstack([ extract_session_features(u, d) 
+                         for u,d in sample_sessions ])
+explainer = shap.TreeExplainer(explain_model, data=background)
+
+def compute_shap(user, date):
+    """
+    주어진 세션(user,date)에 대해
+    피처 중요도(shap values)와 피처 이름 반환
+    """
+    x = extract_session_features(user, date).reshape(1,-1)
+    shap_vals = explainer.shap_values(x)[0]   # (feat_dim,)
+    return {
+      'feature_names': FEATURE_NAMES,         # 정해둔 리스트
+      'shap_values': shap_vals.tolist()
     }

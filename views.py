@@ -1,0 +1,41 @@
+# focus/views.py
+#1. focus/views.py 에 뷰 추가하기
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from .ml import predict_archetype
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def archetype_view(request):
+    """
+    GET /focus/archetype/
+    현재 로그인 유저의 집중 아키타입 인덱스와 (선택)설명을 반환
+    """
+    idx = predict_archetype(request.user)
+    # front에서 TYPE_INFO 매핑을 사용 중이니, 여기서는 인덱스만 내려줘도 충분합니다.
+    return Response({
+        "archetype": idx
+    })
+
+#학습+휴식 시간 추천 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def daily_schedule_view(request):
+    rec = get_daily_recommendation(request.user, days=3)
+    return Response(rec)
+
+#이상치 예측
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def anomaly_view(request):
+    res = detect_anomalies(request.user)
+    return Response(res)
+
+# focus/views.py
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def explain_view(request):
+    date = request.GET.get('date')   # YYYY-MM-DD
+    res = compute_shap(request.user, date)
+    return Response(res)

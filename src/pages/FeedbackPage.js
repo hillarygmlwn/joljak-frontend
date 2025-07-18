@@ -54,7 +54,7 @@ export default function FeedbackPage() {
     const info = TYPE_INFO[archetype] || {};
 
     // 평균 집중도 퍼센트 계산 (소수점 1자리)
-  const avgPercent = (schedule.avg_focus * 100).toFixed(1);
+    const avgPercent = (schedule.avg_focus * 100).toFixed(1);
 
     // ② JSX는 최상위 하나의 div로 감싸기
     return (
@@ -100,6 +100,27 @@ export default function FeedbackPage() {
                 <p>평균 집중도: <strong>{avgPercent}%</strong></p>
                 <p>공부 권장 시간: <strong>{schedule.study_min}분</strong></p>
                 <p>휴식 권장 시간: <strong>{schedule.break_min}분</strong></p>
+            </div>
+
+            {/* 이상치 섹션 */}
+            <div className="section">
+                <h3>최근 집중 패턴 분석</h3>
+                <p>이상 집중 구간: {anomaly.anomaly_windows}/{anomaly.total_windows} ({anomaly.anomaly_ratio * 100}%)</p>
+                {anomaly.anomaly_ratio > 0.1 && (
+                    <p style={{ color: 'crimson' }}>
+                        평소와 다른 집중 패턴이 자주 관찰됩니다. 컨디션을 점검해 보세요.
+                    </p>
+                )}
+            </div>
+
+            {/* SHAP 설명 섹션 */}
+            <div className="section">
+                <h3>세션 성공 기여도 분석</h3>
+                {explain.feature_names.map((f, i) => (
+                    <p key={f}>
+                        {f}: {explain.shap_values[i].toFixed(2)}
+                    </p>
+                ))}
             </div>
 
         </div>
