@@ -89,7 +89,7 @@ function StudySessionPage() {
         },
       });
       if (!res.ok) throw new Error(await res.text());
-      localStorage.removeItem('session_id');
+      //localStorage.removeItem('session_id');
       setIsRunning(false);
       navigate('/dashboard');
     } catch (err) {
